@@ -15,7 +15,7 @@ export default async function AppLayout({
     <div className="min-h-screen lg:flex">
       <RealtimeRefresher />
       <AppSidebar role={auth.role} name={auth.name} />
-      <main className="flex-1 space-y-4 p-4 lg:p-6">
+      <main className="flex-1 space-y-6 bg-zinc-50 p-4 lg:p-8">
         <SmartRecommendations />
         {children}
       </main>

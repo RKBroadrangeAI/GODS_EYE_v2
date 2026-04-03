@@ -176,50 +176,99 @@ export async function getInventoryTiersData(totalDays = 90) {
 }
 
 export async function getBrandPerformanceData(year: number) {
-  const [facts, brandMap] = await Promise.all([getSalesFactsByYear(year), getLookupMap("brands")]);
+  const [facts, brandMap, conditionMap] = await Promise.all([
+    getSalesFactsByYear(year),
+    getLookupMap("brands"),
+    getLookupMap("condition_types"),
+  ]);
 
   const totalUnits = facts.length;
   const totalGp = facts.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
 
-  const rows = Array.from(brandMap.entries()).map(([id, name]) => {
-    const scoped = facts.filter((row) => row.brand_id === id);
-    const metrics = aggregateCoreMetrics(scoped);
+  const rows: {
+    brand: string;
+    condition: string;
+    unitsShare: number | null;
+    gpShare: number | null;
+    revenue: number;
+    gp: number;
+    units: number;
+    margin: number | null;
+    markup: number | null;
+    aging: number | null;
+  }[] = [];
 
-    return {
-      brand: name,
-      unitsShare: safeDivide(metrics.units, totalUnits),
-      gpShare: safeDivide(metrics.gp, totalGp),
-      revenue: metrics.revenue,
-      gp: metrics.gp,
-      units: metrics.units,
-      margin: metrics.margin,
-      aging: metrics.averageAging,
-    };
+  brandMap.forEach((brandName, brandId) => {
+    conditionMap.forEach((conditionName, conditionId) => {
+      const scoped = facts.filter(
+        (row) => row.brand_id === brandId && row.condition_type_id === conditionId,
+      );
+      if (scoped.length === 0) return;
+      const metrics = aggregateCoreMetrics(scoped);
+      rows.push({
+        brand: brandName,
+        condition: conditionName,
+        unitsShare: safeDivide(metrics.units, totalUnits),
+        gpShare: safeDivide(metrics.gp, totalGp),
+        revenue: metrics.revenue,
+        gp: metrics.gp,
+        units: metrics.units,
+        margin: metrics.margin,
+        markup: safeDivide(metrics.gp, metrics.revenue - metrics.gp),
+        aging: metrics.averageAging,
+      });
+    });
   });
 
   return { rows };
 }
 
 export async function getBrandPerformanceM2MData(month: number, year: number) {
-  const [facts, brandMap] = await Promise.all([getSalesFactsByMonth(month, year), getLookupMap("brands")]);
+  const [facts, brandMap, conditionMap] = await Promise.all([
+    getSalesFactsByMonth(month, year),
+    getLookupMap("brands"),
+    getLookupMap("condition_types"),
+  ]);
 
   const totalUnits = facts.length;
   const totalGp = facts.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
 
-  return Array.from(brandMap.entries()).map(([id, name]) => {
-    const scoped = facts.filter((row) => row.brand_id === id);
-    const metrics = aggregateCoreMetrics(scoped);
-    return {
-      brand: name,
-      gpShare: safeDivide(metrics.gp, totalGp),
-      unitsShare: safeDivide(metrics.units, totalUnits),
-      revenue: metrics.revenue,
-      gp: metrics.gp,
-      count: metrics.units,
-      margin: metrics.margin,
-      aging: metrics.averageAging,
-    };
+  const rows: {
+    brand: string;
+    condition: string;
+    gpShare: number | null;
+    unitsShare: number | null;
+    revenue: number;
+    gp: number;
+    count: number;
+    margin: number | null;
+    markup: number | null;
+    aging: number | null;
+  }[] = [];
+
+  brandMap.forEach((brandName, brandId) => {
+    conditionMap.forEach((conditionName, conditionId) => {
+      const scoped = facts.filter(
+        (row) => row.brand_id === brandId && row.condition_type_id === conditionId,
+      );
+      if (scoped.length === 0) return;
+      const metrics = aggregateCoreMetrics(scoped);
+      rows.push({
+        brand: brandName,
+        condition: conditionName,
+        gpShare: safeDivide(metrics.gp, totalGp),
+        unitsShare: safeDivide(metrics.units, totalUnits),
+        revenue: metrics.revenue,
+        gp: metrics.gp,
+        count: metrics.units,
+        margin: metrics.margin,
+        markup: safeDivide(metrics.gp, metrics.revenue - metrics.gp),
+        aging: metrics.averageAging,
+      });
+    });
   });
+
+  return rows;
 }
 
 export async function getInventoryMixData(month: number, year: number) {

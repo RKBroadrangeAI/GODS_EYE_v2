@@ -4,8 +4,8 @@ import {
   isAfter,
   isBefore,
   startOfMonth,
-  differenceInCalendarDays,
 } from "date-fns";
+import { countBusinessDays } from "@/lib/analytics";
 import { pool } from "@/lib/db";
 import { safeDivide } from "@/lib/format";
 
@@ -51,12 +51,14 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
   const today = new Date();
   const startDay = startOfMonth(new Date(year, month - 1, 1));
   const endDay = endOfMonth(startDay);
-  const daysInMonth = endDay.getDate();
 
   const isFutureMonth = isAfter(startDay, today);
   const isPastMonth = isBefore(endDay, today);
-  const rawDays = differenceInCalendarDays(today, startDay) + 1;
-  const daysPassed = isFutureMonth ? 0 : isPastMonth ? daysInMonth : Math.min(daysInMonth, Math.max(0, rawDays));
+  // Mirror Excel NETWORKDAYS(startOfMonth, today) − 1: business days elapsed, not counting today
+  const nextMonthStart = new Date(year, month, 1);
+  const daysInMonth = countBusinessDays(startDay, nextMonthStart);
+  const elapsed = countBusinessDays(startDay, today);
+  const daysPassed = isFutureMonth ? 0 : isPastMonth ? daysInMonth : Math.min(daysInMonth, Math.max(1, elapsed));
 
   const startStr = format(startDay, "yyyy-MM-dd");
   const endStr = format(endDay, "yyyy-MM-dd");

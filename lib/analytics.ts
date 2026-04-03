@@ -1,5 +1,4 @@
 import {
-  differenceInCalendarDays,
   endOfMonth,
   format,
   isAfter,
@@ -9,6 +8,22 @@ import {
 import { pool } from "@/lib/db";
 import { inventoryTierRanges } from "@/lib/constants";
 import { safeDivide } from "@/lib/format";
+
+/**
+ * Count Mon–Fri business days in [start, endExclusive).
+ * Mirrors Excel's NETWORKDAYS(start, today) − 1 when called as
+ * countBusinessDays(startOfMonth, today).
+ */
+export function countBusinessDays(start: Date, endExclusive: Date): number {
+  let count = 0;
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  while (cur < endExclusive) {
+    const day = cur.getDay(); // 0 = Sun, 6 = Sat
+    if (day !== 0 && day !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
 
 type SaleFact = {
   sales_person_id: string;
@@ -33,10 +48,13 @@ export function buildPacingHeader(month: number, year: number): PacingHeader {
   const today = new Date();
   const startDayDate = startOfMonth(new Date(year, month - 1, 1));
   const endDayDate = endOfMonth(startDayDate);
-  const daysInMonth = endDayDate.getDate();
+  // Use business days to mirror Excel NETWORKDAYS, matching Mon–Fri counting
+  const nextMonthStart = new Date(year, month, 1);
+  const daysInMonth = countBusinessDays(startDayDate, nextMonthStart);
   const isFutureMonth = isAfter(startDayDate, today);
   const isPastMonth = isBefore(endDayDate, today);
-  const rawDays = differenceInCalendarDays(today, startDayDate) + 1;
+  // NETWORKDAYS(startOfMonth, today) − 1 = business days elapsed, not counting today
+  const elapsed = countBusinessDays(startDayDate, today);
 
   return {
     daysInMonth,
@@ -46,7 +64,7 @@ export function buildPacingHeader(month: number, year: number): PacingHeader {
       ? 0
       : isPastMonth
         ? daysInMonth
-        : Math.min(daysInMonth, Math.max(0, rawDays)),
+        : Math.min(daysInMonth, Math.max(1, elapsed)),
   };
 }
 
