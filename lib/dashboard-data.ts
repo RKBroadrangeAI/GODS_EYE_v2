@@ -55,8 +55,10 @@ export async function getOverallSalesData(year: number) {
       ...average,
       gppu: rows.map((row) => row.gppu).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
         Math.max(1, rows.map((row) => row.gppu).filter((v) => v != null).length),
-      margin: safeDivide(average.grossProfit, average.revenue),
-      avePrice: safeDivide(average.revenue, average.units),
+      margin: rows.map((row) => row.margin).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+        Math.max(1, rows.map((row) => row.margin).filter((v) => v != null).length),
+      avePrice: rows.map((row) => row.avePrice).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+        Math.max(1, rows.map((row) => row.avePrice).filter((v) => v != null).length),
       aging: rows.map((row) => row.aging).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
         Math.max(1, rows.map((row) => row.aging).filter((v) => v != null).length),
     },
@@ -141,7 +143,53 @@ export async function getLeadPerformanceMonthlyData(month: number, year: number)
     };
   });
 
-  return { header, rows };
+  const totals = {
+    gp: rows.reduce((sum, r) => sum + r.gp, 0),
+    gpBudget: rows.reduce((sum, r) => sum + r.gpBudget, 0),
+    pacingGp: rows.reduce((sum, r) => sum + (r.pacingGp ?? 0), 0),
+    overUnderGp: rows.reduce((sum, r) => sum + (r.overUnderGp ?? 0), 0),
+    units: rows.reduce((sum, r) => sum + r.units, 0),
+    unitBudget: rows.reduce((sum, r) => sum + r.unitBudget, 0),
+    pacingUnits: rows.reduce((sum, r) => sum + (r.pacingUnits ?? 0), 0),
+    overUnderUnits: rows.reduce((sum, r) => sum + (r.overUnderUnits ?? 0), 0),
+    revenue: rows.reduce((sum, r) => sum + r.revenue, 0),
+    pacingRevenue: rows.reduce((sum, r) => sum + (r.pacingRevenue ?? 0), 0),
+  };
+
+  const count = rows.length || 1;
+  const leadAverage = {
+    gp: totals.gp / count,
+    gpBudget: totals.gpBudget / count,
+    pacingGp: totals.pacingGp / count,
+    overUnderGp: totals.overUnderGp / count,
+    units: totals.units / count,
+    unitBudget: totals.unitBudget / count,
+    pacingUnits: totals.pacingUnits / count,
+    overUnderUnits: totals.overUnderUnits / count,
+    revenue: totals.revenue / count,
+    pacingRevenue: totals.pacingRevenue / count,
+    gppu: rows.map((r) => r.gppu).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+      Math.max(1, rows.map((r) => r.gppu).filter((v) => v != null).length),
+    aging: rows.map((r) => r.aging).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+      Math.max(1, rows.map((r) => r.aging).filter((v) => v != null).length),
+    margin: rows.map((r) => r.margin).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+      Math.max(1, rows.map((r) => r.margin).filter((v) => v != null).length),
+    avePrice: rows.map((r) => r.avePrice).filter((v): v is number => v != null).reduce((a, b) => a + b, 0) /
+      Math.max(1, rows.map((r) => r.avePrice).filter((v) => v != null).length),
+  };
+
+  return {
+    header,
+    rows,
+    totals: {
+      ...totals,
+      gppu: safeDivide(totals.gp, totals.units),
+      aging: null as number | null,
+      margin: safeDivide(totals.gp, totals.revenue),
+      avePrice: safeDivide(totals.revenue, totals.units),
+    },
+    average: leadAverage,
+  };
 }
 
 export async function getInventoryTiersData(totalDays = 90) {
@@ -280,17 +328,45 @@ export async function getInventoryMixData(month: number, year: number) {
   const conditionMap = await getLookupMap("condition_types");
   const totals = aggregateCoreMetrics(facts);
 
+  // Fetch condition-type budgets
+  const budgetResult = await pool.query<{
+    condition_type_id: string;
+    gp_budget: string | null;
+    unit_budget: string | null;
+  }>(
+    `SELECT condition_type_id, gp_budget, unit_budget
+     FROM budgets
+     WHERE year = $1 AND month = $2 AND condition_type_id IS NOT NULL`,
+    [year, month],
+  );
+
+  const budgetMap = new Map(
+    budgetResult.rows.map((row) => [
+      row.condition_type_id,
+      { gp_budget: Number(row.gp_budget ?? 0), unit_budget: Number(row.unit_budget ?? 0) },
+    ]),
+  );
+
   const rows = Array.from(conditionMap.entries()).map(([id, name]) => {
     const scoped = facts.filter((row) => row.condition_type_id === id);
     const metrics = aggregateCoreMetrics(scoped);
+    const budget = budgetMap.get(id);
+    const gpBudget = budget?.gp_budget ?? 0;
+    const unitBudget = budget?.unit_budget ?? 0;
+    const pacingGp = withPacingValue(metrics.gp, header);
+    const pacingUnits = withPacingValue(metrics.units, header);
 
     return {
       inventoryType: name,
       gp: metrics.gp,
       gpShare: safeDivide(metrics.gp, totals.gp),
-      pacingGp: withPacingValue(metrics.gp, header),
+      gpBudget,
+      pacingGp,
+      overUnderGp: pacingGp == null ? null : pacingGp - gpBudget,
       units: metrics.units,
-      pacingUnits: withPacingValue(metrics.units, header),
+      unitBudget,
+      pacingUnits,
+      overUnderUnits: pacingUnits == null ? null : pacingUnits - unitBudget,
       revenue: metrics.revenue,
       pacingRevenue: withPacingValue(metrics.revenue, header),
       gppu: metrics.gppu,

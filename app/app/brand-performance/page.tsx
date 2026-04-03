@@ -33,21 +33,22 @@ export default async function BrandPerformancePage({
           <Table>
             <TableHeader>
               <TableRow>
-                {["Brand", "% Of Units", "% of GP", "Revenue", "GP", "Units", "Ave. Margin", "Ave. Aging"].map((h) => (
+                {["Brand", "Condition", "% Of Units", "% of GP", "Revenue", "GP", "Units", "Markup", "Ave. Aging"].map((h) => (
                   <TableHead key={h}>{h}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.rows.map((row) => (
-                <TableRow key={row.brand}>
+                <TableRow key={`${row.brand}-${row.condition}`}>
                   <TableCell>{row.brand}</TableCell>
+                  <TableCell>{row.condition}</TableCell>
                   <TableCell>{formatPercent(row.unitsShare)}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{row.units}</TableCell>
-                  <TableCell>{formatPercent(row.margin)}</TableCell>
+                  <TableCell>{formatPercent(row.markup)}</TableCell>
                   <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
                 </TableRow>
               ))}

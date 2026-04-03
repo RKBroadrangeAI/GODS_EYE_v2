@@ -151,27 +151,16 @@ function TeamPacingTable({ data }: { data: SalesPerformancePayload }) {
     "Cashed GP",
     "GP Budget",
     "Pacing GP",
-    "Pacing GP",
-    "Over/Under",
-    "Over/Under",
-    "Units",
+    "O/U GP",
     "Units",
     "Unit Budget",
     "Pacing Units",
-    "Pacing Units",
-    "Over/Under",
-    "Over/Under",
-    "Revenue",
+    "O/U Units",
     "Revenue",
     "Pacing Revenue",
-    "Pacing Revenue",
-    "GP/PU",
     "GP/PU",
     "Ave. Aging",
-    "Ave. Aging",
     "Margin",
-    "Margin",
-    "Ave Price",
     "Ave Price",
   ];
 
@@ -192,27 +181,16 @@ function TeamPacingTable({ data }: { data: SalesPerformancePayload }) {
             <TableCell>{formatCurrency(row.cashedGp)}</TableCell>
             <TableCell>{formatCurrency(row.gpBudget)}</TableCell>
             <TableCell>{formatCurrency(row.pacingGp)}</TableCell>
-            <TableCell>{formatCurrency(row.pacingGp)}</TableCell>
             <TableCell className={valueClass(row.overUnderGp)}>{formatCurrency(row.overUnderGp)}</TableCell>
-            <TableCell className={valueClass(row.overUnderGp)}>{formatCurrency(row.overUnderGp)}</TableCell>
-            <TableCell>{row.units}</TableCell>
             <TableCell>{row.units}</TableCell>
             <TableCell>{row.unitBudget.toFixed(0)}</TableCell>
             <TableCell>{row.pacingUnits == null ? "—" : row.pacingUnits.toFixed(1)}</TableCell>
-            <TableCell>{row.pacingUnits == null ? "—" : row.pacingUnits.toFixed(1)}</TableCell>
-            <TableCell className={valueClass(row.overUnderUnits)}>{row.overUnderUnits == null ? "—" : row.overUnderUnits.toFixed(1)}</TableCell>
             <TableCell className={valueClass(row.overUnderUnits)}>{row.overUnderUnits == null ? "—" : row.overUnderUnits.toFixed(1)}</TableCell>
             <TableCell>{formatCurrency(row.revenue)}</TableCell>
-            <TableCell>{formatCurrency(row.revenue)}</TableCell>
-            <TableCell>{formatCurrency(row.pacingRevenue)}</TableCell>
             <TableCell>{formatCurrency(row.pacingRevenue)}</TableCell>
             <TableCell>{formatCurrency(row.gppu)}</TableCell>
-            <TableCell>{formatCurrency(row.gppu)}</TableCell>
-            <TableCell>{row.averageAging == null ? "—" : row.averageAging.toFixed(1)}</TableCell>
             <TableCell>{row.averageAging == null ? "—" : row.averageAging.toFixed(1)}</TableCell>
             <TableCell>{formatPercent(row.margin)}</TableCell>
-            <TableCell>{formatPercent(row.margin)}</TableCell>
-            <TableCell>{formatCurrency(row.averagePrice)}</TableCell>
             <TableCell>{formatCurrency(row.averagePrice)}</TableCell>
           </TableRow>
         ))}
@@ -240,27 +218,16 @@ function FooterRow({
       <TableCell>{formatCurrency(data.cashedGp)}</TableCell>
       <TableCell>{formatCurrency(data.gpBudget)}</TableCell>
       <TableCell>{formatCurrency(data.pacingGp)}</TableCell>
-      <TableCell>{formatCurrency(data.pacingGp)}</TableCell>
       <TableCell className={valueClass(data.overUnderGp)}>{formatCurrency(data.overUnderGp)}</TableCell>
-      <TableCell className={valueClass(data.overUnderGp)}>{formatCurrency(data.overUnderGp)}</TableCell>
-      <TableCell>{(data.units ?? 0).toFixed(1)}</TableCell>
       <TableCell>{(data.units ?? 0).toFixed(1)}</TableCell>
       <TableCell>{(data.unitBudget ?? 0).toFixed(1)}</TableCell>
       <TableCell>{(data.pacingUnits ?? 0).toFixed(1)}</TableCell>
-      <TableCell>{(data.pacingUnits ?? 0).toFixed(1)}</TableCell>
-      <TableCell className={valueClass(data.overUnderUnits)}>{(data.overUnderUnits ?? 0).toFixed(1)}</TableCell>
       <TableCell className={valueClass(data.overUnderUnits)}>{(data.overUnderUnits ?? 0).toFixed(1)}</TableCell>
       <TableCell>{formatCurrency(data.revenue)}</TableCell>
-      <TableCell>{formatCurrency(data.revenue)}</TableCell>
-      <TableCell>{formatCurrency(data.pacingRevenue)}</TableCell>
       <TableCell>{formatCurrency(data.pacingRevenue)}</TableCell>
       <TableCell>{formatCurrency(data.gppu)}</TableCell>
-      <TableCell>{formatCurrency(data.gppu)}</TableCell>
-      <TableCell>{data.averageAging == null ? "—" : data.averageAging.toFixed(1)}</TableCell>
       <TableCell>{data.averageAging == null ? "—" : data.averageAging.toFixed(1)}</TableCell>
       <TableCell>{formatPercent(data.margin)}</TableCell>
-      <TableCell>{formatPercent(data.margin)}</TableCell>
-      <TableCell>{formatCurrency(data.averagePrice)}</TableCell>
       <TableCell>{formatCurrency(data.averagePrice)}</TableCell>
     </TableRow>
   );

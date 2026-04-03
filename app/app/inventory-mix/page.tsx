@@ -35,7 +35,7 @@ export default async function InventoryMixPage({
           <Table>
             <TableHeader>
               <TableRow>
-                {["Inventory Type", "Gross Profit", "% of GP", "Pacing GP", "Over/Under", "Units", "Pacing Units", "Revenue", "Pacing Revenue", "GP/PU", "Ave Aging", "Margin", "Ave Price"].map((h) => (
+                {["Inventory Type", "Gross Profit", "% of GP", "GP Budget", "Pacing GP", "O/U GP", "Units", "Unit Budget", "Pacing Units", "O/U Units", "Revenue", "Pacing Revenue", "GP/PU", "Ave Aging", "Margin", "Ave Price"].map((h) => (
                   <TableHead key={h}>{h}</TableHead>
                 ))}
               </TableRow>
@@ -46,10 +46,13 @@ export default async function InventoryMixPage({
                   <TableCell>{row.inventoryType}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>
+                  <TableCell>{formatCurrency(row.gpBudget)}</TableCell>
                   <TableCell>{formatCurrency(row.pacingGp)}</TableCell>
-                  <TableCell>{row.pacingGp == null ? "—" : formatCurrency(row.pacingGp - row.gp)}</TableCell>
+                  <TableCell className={row.overUnderGp != null && row.overUnderGp >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(row.overUnderGp)}</TableCell>
                   <TableCell>{row.units}</TableCell>
+                  <TableCell>{row.unitBudget.toFixed(1)}</TableCell>
                   <TableCell>{row.pacingUnits == null ? "—" : row.pacingUnits.toFixed(1)}</TableCell>
+                  <TableCell className={row.overUnderUnits != null && row.overUnderUnits >= 0 ? "text-emerald-600" : "text-red-600"}>{row.overUnderUnits == null ? "—" : row.overUnderUnits.toFixed(1)}</TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.pacingRevenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gppu)}</TableCell>

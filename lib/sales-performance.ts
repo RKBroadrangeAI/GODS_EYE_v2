@@ -76,7 +76,9 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
     pool.query<BudgetRow>(
       `SELECT employee_id, gp_budget, unit_budget
        FROM budgets
-       WHERE year = $1 AND month = $2`,
+       WHERE year = $1 AND month = $2
+         AND lead_source_id IS NULL
+         AND condition_type_id IS NULL`,
       [year, month],
     ),
   ]);
@@ -167,8 +169,20 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
           .reduce((a, b) => a + b, 0) /
         Math.max(1, rows.map((row) => row.averageAging).filter((value) => value != null).length)
       : null,
-    margin: safeDivide(totals.closedGp, totals.revenue),
-    averagePrice: safeDivide(totals.revenue, totals.units),
+    margin: rows.length
+      ? rows
+          .map((row) => row.margin)
+          .filter((value): value is number => value != null)
+          .reduce((a, b) => a + b, 0) /
+        Math.max(1, rows.map((row) => row.margin).filter((value) => value != null).length)
+      : null,
+    averagePrice: rows.length
+      ? rows
+          .map((row) => row.averagePrice)
+          .filter((value): value is number => value != null)
+          .reduce((a, b) => a + b, 0) /
+        Math.max(1, rows.map((row) => row.averagePrice).filter((value) => value != null).length)
+      : null,
   };
 
   return {

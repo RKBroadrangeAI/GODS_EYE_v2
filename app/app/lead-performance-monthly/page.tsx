@@ -61,6 +61,40 @@ export default async function LeadPerformanceMonthlyPage({
                   <TableCell>{formatCurrency(row.avePrice)}</TableCell>
                 </TableRow>
               ))}
+              <TableRow className="bg-zinc-50">
+                <TableCell>Average</TableCell>
+                <TableCell>{formatCurrency(data.average.gp)}</TableCell>
+                <TableCell>{formatCurrency(data.average.gpBudget)}</TableCell>
+                <TableCell>{formatCurrency(data.average.pacingGp)}</TableCell>
+                <TableCell className={data.average.overUnderGp >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(data.average.overUnderGp)}</TableCell>
+                <TableCell>{data.average.units.toFixed(1)}</TableCell>
+                <TableCell>{data.average.unitBudget.toFixed(1)}</TableCell>
+                <TableCell>{data.average.pacingUnits.toFixed(1)}</TableCell>
+                <TableCell className={data.average.overUnderUnits >= 0 ? "text-emerald-600" : "text-red-600"}>{data.average.overUnderUnits.toFixed(1)}</TableCell>
+                <TableCell>{formatCurrency(data.average.revenue)}</TableCell>
+                <TableCell>{formatCurrency(data.average.pacingRevenue)}</TableCell>
+                <TableCell>{formatCurrency(data.average.gppu)}</TableCell>
+                <TableCell>{data.average.aging == null ? "—" : data.average.aging.toFixed(1)}</TableCell>
+                <TableCell>{formatPercent(data.average.margin)}</TableCell>
+                <TableCell>{formatCurrency(data.average.avePrice)}</TableCell>
+              </TableRow>
+              <TableRow className="bg-zinc-100 font-semibold">
+                <TableCell>Total</TableCell>
+                <TableCell>{formatCurrency(data.totals.gp)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.gpBudget)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.pacingGp)}</TableCell>
+                <TableCell className={data.totals.overUnderGp >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(data.totals.overUnderGp)}</TableCell>
+                <TableCell>{data.totals.units}</TableCell>
+                <TableCell>{data.totals.unitBudget.toFixed(1)}</TableCell>
+                <TableCell>{data.totals.pacingUnits.toFixed(1)}</TableCell>
+                <TableCell className={data.totals.overUnderUnits >= 0 ? "text-emerald-600" : "text-red-600"}>{data.totals.overUnderUnits.toFixed(1)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.revenue)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.pacingRevenue)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.gppu)}</TableCell>
+                <TableCell>—</TableCell>
+                <TableCell>{formatPercent(data.totals.margin)}</TableCell>
+                <TableCell>{formatCurrency(data.totals.avePrice)}</TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
