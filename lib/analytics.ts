@@ -76,7 +76,8 @@ export async function getSalesFactsByMonth(month: number, year: number) {
     `SELECT sales_person_id, brand_id, condition_type_id, lead_source_id,
             in_person_option_id, profit, sold_for, age_days, is_cashed
      FROM sales
-     WHERE date_out >= $1 AND date_out <= $2`,
+     WHERE date_out >= $1 AND date_out <= $2
+       AND is_cashed = true`,
     [startDay, endDay],
   );
 
@@ -88,7 +89,8 @@ export async function getSalesFactsByYear(year: number) {
     `SELECT sales_person_id, brand_id, condition_type_id, lead_source_id,
             in_person_option_id, profit, sold_for, age_days, is_cashed, date_out
      FROM sales
-     WHERE date_out >= $1 AND date_out <= $2`,
+     WHERE date_out >= $1 AND date_out <= $2
+       AND is_cashed = true`,
     [`${year}-01-01`, `${year}-12-31`],
   );
 
@@ -134,7 +136,8 @@ export function withPacingValue(value: number, header: PacingHeader) {
 export function aggregateCoreMetrics(rows: { profit: number; sold_for: number; age_days: number | null }[]) {
   const gp = rows.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
   const revenue = rows.reduce((sum, row) => sum + Number(row.sold_for ?? 0), 0);
-  const units = rows.length;
+  // Match Excel: units only count rows with positive profit
+  const units = rows.filter((row) => Number(row.profit ?? 0) > 0).length;
   const ages = rows.map((row) => row.age_days).filter((value): value is number => value != null);
   const averageAging = ages.length ? ages.reduce((sum, age) => sum + age, 0) / ages.length : null;
 

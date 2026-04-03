@@ -199,7 +199,8 @@ export async function getInventoryTiersData(totalDays = 90) {
   const { rows } = await pool.query<{ sold_for: string; profit: string; age_days: number | null }>(
     `SELECT sold_for, profit, age_days
      FROM sales
-     WHERE date_out >= $1 AND date_out <= $2`,
+     WHERE date_out >= $1 AND date_out <= $2
+       AND is_cashed = true`,
     [format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
   );
 

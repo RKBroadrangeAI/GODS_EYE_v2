@@ -34,11 +34,11 @@ export async function buildAiContext(month: number, year: number): Promise<AiCon
 
   const [prevResult, currResult] = await Promise.all([
     pool.query<{ profit: string }>(
-      `SELECT profit FROM sales WHERE date_out >= $1 AND date_out <= $2`,
+      `SELECT profit FROM sales WHERE date_out >= $1 AND date_out <= $2 AND is_cashed = true`,
       [prevStart, prevEnd],
     ),
     pool.query<{ profit: string; sold_for: string; cost: string; age_days: number | null }>(
-      `SELECT profit, sold_for, cost, age_days FROM sales WHERE date_out >= $1 AND date_out <= $2`,
+      `SELECT profit, sold_for, cost, age_days FROM sales WHERE date_out >= $1 AND date_out <= $2 AND is_cashed = true`,
       [currStart, currEnd],
     ),
   ]);
@@ -82,7 +82,7 @@ export async function buildAiContext(month: number, year: number): Promise<AiCon
 
   const [inPersonResult, optionsResult] = await Promise.all([
     pool.query<{ in_person_option_id: string | null; profit: string; sold_for: string }>(
-      `SELECT in_person_option_id, profit, sold_for FROM sales WHERE date_out >= $1 AND date_out <= $2`,
+      `SELECT in_person_option_id, profit, sold_for FROM sales WHERE date_out >= $1 AND date_out <= $2 AND is_cashed = true`,
       [currStart, currEnd],
     ),
     pool.query<{ id: string; name: string }>(`SELECT id, name FROM in_person_options`),
