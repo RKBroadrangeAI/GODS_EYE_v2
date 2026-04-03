@@ -24,7 +24,10 @@ export function BudgetDashboard({ rows }: Props) {
 
   const selected = rows.find((row) => row.month === month) ?? rows[0];
 
-  async function updateField(field: "inventoryBudget" | "avgInventoryValue" | "marginBudget", value: number) {
+  async function updateField(
+    field: "inventoryBudget" | "avgInventoryValue" | "marginBudget" | "averageDays" | "growthPercent" | "weight",
+    value: number,
+  ) {
     setSaving(true);
     const response = await fetch("/api/budgets", {
       method: "PATCH",
@@ -35,6 +38,9 @@ export function BudgetDashboard({ rows }: Props) {
         inventoryBudget: field === "inventoryBudget" ? value : selected.inventoryBudget,
         avgInventoryValue: field === "avgInventoryValue" ? value : selected.avgInventoryValue,
         marginBudget: field === "marginBudget" ? value : selected.marginBudget,
+        averageDays: field === "averageDays" ? value : selected.averageDays,
+        growthPercent: field === "growthPercent" ? value : selected.growthPercent,
+        weight: field === "weight" ? value : selected.weight,
       }),
     });
     setSaving(false);
@@ -98,7 +104,11 @@ export function BudgetDashboard({ rows }: Props) {
             </span>
           </div>
         ) : null}
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
+          <Metric label="Today" value={new Date().toISOString().slice(0, 10)} />
+          <Metric label="Month #" value={String(new Date().getMonth() + 1)} />
+          <Metric label="Remaining" value={String(12 - new Date().getMonth() - 1)} />
+          <Metric label="Avg Increase/Mo" value={formatCurrency(selected.avgIncreasePerMonth)} />
           <Metric label="YTD DELTA" value={formatCurrency(selected.ytdDelta)} />
           <Metric label="TRACKING vs PROJECTED" value={formatCurrency(selected.trackingDelta)} />
           <Metric label="ACTUAL GP" value={formatCurrency(selected.actualGp2026)} />
@@ -114,7 +124,6 @@ export function BudgetDashboard({ rows }: Props) {
                 "AVE $ SOLD",
                 "REVENUE",
                 "MARGIN %",
-                "AVG INCREASE PER MONTH",
                 "INVENTORY BUDGET",
                 "AVERAGE DAYS",
                 "Days in Month",
@@ -132,10 +141,6 @@ export function BudgetDashboard({ rows }: Props) {
                 "Projected GP",
                 "Tracking Delta",
                 "YTD Delta",
-                "Finalized",
-                "Today",
-                "Month #",
-                "Remaining",
               ].map((header) => (
                 <TableHead key={header}>{header}</TableHead>
               ))}
@@ -151,7 +156,6 @@ export function BudgetDashboard({ rows }: Props) {
                 <TableCell>{formatCurrency(row.avgSold2025)}</TableCell>
                 <TableCell>{formatCurrency(row.revenue2025)}</TableCell>
                 <TableCell>{formatPercent(row.margin2025)}</TableCell>
-                <TableCell>{formatCurrency(row.avgIncreasePerMonth)}</TableCell>
                 <TableCell>
                   <Editable
                     value={row.inventoryBudget}
@@ -159,7 +163,13 @@ export function BudgetDashboard({ rows }: Props) {
                     onSave={(value) => updateField("inventoryBudget", value)}
                   />
                 </TableCell>
-                <TableCell>{row.averageDays}</TableCell>
+                <TableCell>
+                  <Editable
+                    value={row.averageDays}
+                    disabled={row.isFinalized || month !== row.month || saving || isPending}
+                    onSave={(value) => updateField("averageDays", value)}
+                  />
+                </TableCell>
                 <TableCell>{row.daysInMonth}</TableCell>
                 <TableCell>
                   <Editable
@@ -178,8 +188,22 @@ export function BudgetDashboard({ rows }: Props) {
                   />
                 </TableCell>
                 <TableCell>{formatCurrency(row.gpBudget2026)}</TableCell>
-                <TableCell>{formatPercent(row.growthPercent)}</TableCell>
-                <TableCell>{formatPercent(row.weight)}</TableCell>
+                <TableCell>
+                  <Editable
+                    value={row.growthPercent}
+                    disabled={row.isFinalized || month !== row.month || saving || isPending}
+                    onSave={(value) => updateField("growthPercent", value)}
+                    step="0.01"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Editable
+                    value={row.weight}
+                    disabled={row.isFinalized || month !== row.month || saving || isPending}
+                    onSave={(value) => updateField("weight", value)}
+                    step="0.001"
+                  />
+                </TableCell>
                 <TableCell>{formatCurrency(row.unitBudget2026)}</TableCell>
                 <TableCell>{formatCurrency(row.perUnit2026)}</TableCell>
                 <TableCell>{formatCurrency(row.aveBudget2026)}</TableCell>
@@ -190,10 +214,6 @@ export function BudgetDashboard({ rows }: Props) {
                   {formatCurrency(row.trackingDelta)}
                 </TableCell>
                 <TableCell className={row.ytdDelta >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(row.ytdDelta)}</TableCell>
-                <TableCell>{row.isFinalized ? "Yes" : "No"}</TableCell>
-                <TableCell>{new Date().toISOString().slice(0, 10)}</TableCell>
-                <TableCell>{row.month}</TableCell>
-                <TableCell>{12 - row.month}</TableCell>
               </TableRow>
             ))}
           </TableBody>
