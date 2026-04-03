@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, endOfMonth } from "date-fns";
 import { getSalesPerformanceData } from "@/lib/sales-performance";
 import { pool } from "@/lib/db";
 import { safeDivide } from "@/lib/format";
@@ -24,16 +24,22 @@ export async function buildAiContext(month: number, year: number): Promise<AiCon
     .map((row) => `${row.salesAssociate} (${Math.abs(row.overUnderGp ?? 0).toFixed(0)} below budget)`);
 
   const mStr = String(month).padStart(2, "0");
-  const prevMStr = String(Math.max(1, month - 1)).padStart(2, "0");
+  const prevMonth = Math.max(1, month - 1);
+  const prevMStr = String(prevMonth).padStart(2, "0");
+
+  const currStart = `${year}-${mStr}-01`;
+  const currEnd = format(endOfMonth(new Date(year, month - 1, 1)), "yyyy-MM-dd");
+  const prevStart = `${year}-${prevMStr}-01`;
+  const prevEnd = format(endOfMonth(new Date(year, prevMonth - 1, 1)), "yyyy-MM-dd");
 
   const [prevResult, currResult] = await Promise.all([
     pool.query<{ profit: string }>(
       `SELECT profit FROM sales WHERE date_out >= $1 AND date_out <= $2`,
-      [`${year}-${prevMStr}-01`, `${year}-${prevMStr}-31`],
+      [prevStart, prevEnd],
     ),
     pool.query<{ profit: string; sold_for: string; cost: string; age_days: number | null }>(
       `SELECT profit, sold_for, cost, age_days FROM sales WHERE date_out >= $1 AND date_out <= $2`,
-      [`${year}-${mStr}-01`, `${year}-${mStr}-31`],
+      [currStart, currEnd],
     ),
   ]);
 
@@ -77,7 +83,7 @@ export async function buildAiContext(month: number, year: number): Promise<AiCon
   const [inPersonResult, optionsResult] = await Promise.all([
     pool.query<{ in_person_option_id: string | null; profit: string; sold_for: string }>(
       `SELECT in_person_option_id, profit, sold_for FROM sales WHERE date_out >= $1 AND date_out <= $2`,
-      [`${year}-${mStr}-01`, `${year}-${mStr}-31`],
+      [currStart, currEnd],
     ),
     pool.query<{ id: string; name: string }>(`SELECT id, name FROM in_person_options`),
   ]);
