@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, LockOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,37 @@ export function BudgetDashboard({ rows }: Props) {
   const { success, error } = useToast();
 
   const selected = rows.find((row) => row.month === month) ?? rows[0];
+
+  // Compute totals row matching Excel TOTAL row
+  const totals = useMemo(() => {
+    const profit2025 = rows.reduce((s, r) => s + r.profit2025, 0);
+    const units2025 = rows.reduce((s, r) => s + r.units2025, 0);
+    const revenue2025 = rows.reduce((s, r) => s + r.revenue2025, 0);
+    const gpBudget2026 = rows.reduce((s, r) => s + r.gpBudget2026, 0);
+    const unitBudget2026 = rows.reduce((s, r) => s + (r.unitBudget2026 ?? 0), 0);
+    const revenueBudget2026 = rows.reduce((s, r) => s + (r.revenueBudget2026 ?? 0), 0);
+    const actualGp2026 = rows.reduce((s, r) => s + r.actualGp2026, 0);
+    const projectedGp2026 = rows.reduce((s, r) => s + (r.projectedGp2026 ?? 0), 0);
+    const avgDays = rows.length ? rows.reduce((s, r) => s + r.averageDays, 0) / rows.length : 0;
+    const avgInvValue = rows.length ? rows.reduce((s, r) => s + r.avgInventoryValue, 0) / rows.length : 0;
+
+    return {
+      profit2025,
+      units2025,
+      perUnit2025: units2025 ? profit2025 / units2025 : null,
+      avgSold2025: units2025 ? revenue2025 / units2025 : null,
+      revenue2025,
+      margin2025: revenue2025 ? profit2025 / revenue2025 : null,
+      avgDays,
+      avgInvValue,
+      gpBudget2026,
+      unitBudget2026,
+      revenueBudget2026,
+      actualGp2026,
+      projectedGp2026,
+      trackingDelta: actualGp2026 - projectedGp2026,
+    };
+  }, [rows]);
 
   async function updateField(
     field: "inventoryBudget" | "avgInventoryValue" | "marginBudget" | "averageDays" | "growthPercent" | "weight",
@@ -216,6 +247,34 @@ export function BudgetDashboard({ rows }: Props) {
                 <TableCell className={row.ytdDelta >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(row.ytdDelta)}</TableCell>
               </TableRow>
             ))}
+            <TableRow className="bg-zinc-100 font-semibold italic">
+              <TableCell>TOTAL</TableCell>
+              <TableCell>{formatCurrency(totals.profit2025)}</TableCell>
+              <TableCell>{totals.units2025}</TableCell>
+              <TableCell>{formatCurrency(totals.perUnit2025)}</TableCell>
+              <TableCell>{formatCurrency(totals.avgSold2025)}</TableCell>
+              <TableCell>{formatCurrency(totals.revenue2025)}</TableCell>
+              <TableCell>{formatPercent(totals.margin2025)}</TableCell>
+              <TableCell />
+              <TableCell className="text-orange-600">{totals.avgDays.toFixed(2)}</TableCell>
+              <TableCell />
+              <TableCell className="text-orange-600">{formatCurrency(totals.avgInvValue)}</TableCell>
+              <TableCell />
+              <TableCell />
+              <TableCell>{formatCurrency(totals.gpBudget2026)}</TableCell>
+              <TableCell />
+              <TableCell />
+              <TableCell>{formatCurrency(totals.unitBudget2026)}</TableCell>
+              <TableCell />
+              <TableCell />
+              <TableCell>{formatCurrency(totals.revenueBudget2026)}</TableCell>
+              <TableCell>{formatCurrency(totals.actualGp2026)}</TableCell>
+              <TableCell>{formatCurrency(totals.projectedGp2026)}</TableCell>
+              <TableCell className={totals.trackingDelta >= 0 ? "text-emerald-600" : "text-red-600"}>
+                {formatCurrency(totals.trackingDelta)}
+              </TableCell>
+              <TableCell />
+            </TableRow>
           </TableBody>
         </Table>
       </CardContent>
