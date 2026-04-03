@@ -84,7 +84,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
   return (
     <aside className="flex w-full shrink-0 flex-col bg-[#1c1c1e] text-white lg:w-64 lg:min-h-screen">
       {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-zinc-200 bg-white px-5 py-4">
         <Image
           src="/copy_logo.png"
           alt="God's Eye"
@@ -95,7 +95,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
         />
         <div>
           <p className="text-sm font-bold tracking-wide text-orange-500">GOD&apos;S EYE</p>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-400">Sales Intelligence</p>
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500">Sales Intelligence</p>
         </div>
       </div>
 
