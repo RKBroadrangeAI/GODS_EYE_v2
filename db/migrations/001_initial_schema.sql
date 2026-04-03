@@ -8,9 +8,12 @@ create extension if not exists citext;
 
 -- ── Types ────────────────────────────────────────────────────
 
-create type if not exists public.app_role as enum (
-  'admin', 'management', 'sales_associate', 'view_only'
-);
+do $$ begin
+  create type public.app_role as enum (
+    'admin', 'management', 'sales_associate', 'view_only'
+  );
+exception when duplicate_object then null;
+end $$;
 
 -- ── Core tables ──────────────────────────────────────────────
 
