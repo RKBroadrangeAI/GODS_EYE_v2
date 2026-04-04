@@ -99,7 +99,8 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
     const cashedGp = scopedSales
       .filter((row) => row.is_cashed)
       .reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
-    const units = scopedSales.length;
+    // Match Excel: units only count rows with positive profit
+    const units = scopedSales.filter((row) => Number(row.profit ?? 0) > 0).length;
     const revenue = scopedSales.reduce((sum, row) => sum + Number(row.sold_for ?? 0), 0);
     const agingValues = scopedSales.map((s) => s.age_days).filter((value): value is number => value != null);
     const averageAging = agingValues.length ? agingValues.reduce((a, b) => a + b, 0) / agingValues.length : null;

@@ -55,10 +55,10 @@ const adminIconMap: Record<string, ReactNode> = {
 };
 
 const dashboardLinks = [
-  { href: "/app/sales-performance",              label: "Sales Performance" },
   { href: "/app/budget-2026",                    label: "Budget 2026" },
   { href: "/app/overall-sales",                  label: "Overall Sales" },
   { href: "/app/in-person-vs-remote",            label: "In Person vs Remote" },
+  { href: "/app/sales-performance",              label: "Sales Performance" },
   { href: "/app/lead-performance-monthly",       label: "Lead Perf Monthly" },
   { href: "/app/inventory-tiers",                label: "Inventory Tiers" },
   { href: "/app/brand-performance",              label: "Brand Performance" },
