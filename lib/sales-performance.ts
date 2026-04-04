@@ -70,7 +70,8 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
     pool.query<SalesRow>(
       `SELECT sales_person_id, is_cashed, profit, sold_for, age_days
        FROM sales
-       WHERE date_out >= $1 AND date_out <= $2`,
+       WHERE date_out >= $1 AND date_out <= $2
+         AND is_cashed = true`,
       [startStr, endStr],
     ),
     pool.query<BudgetRow>(

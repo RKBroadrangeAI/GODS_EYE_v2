@@ -64,7 +64,8 @@ export async function getBudgetRows(year = 2026): Promise<BudgetMonthRow[]> {
     pool.query<{ month_number: number | null; profit: string }>(
       `SELECT month_number, profit
        FROM sales
-       WHERE date_out >= $1 AND date_out <= $2`,
+       WHERE date_out >= $1 AND date_out <= $2
+         AND is_cashed = true`,
       [`${year}-01-01`, `${year}-12-31`],
     ),
   ]);
