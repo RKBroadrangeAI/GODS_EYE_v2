@@ -18,12 +18,12 @@ export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTabl
 }
 
 export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("border-b transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800", className)} {...props} />;
+  return <tr className={cn("border-b transition-colors hover:bg-zinc-50", className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th className={cn("h-10 px-3 text-left align-middle text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400", className)} {...props} />
+    <th className={cn("h-10 px-3 text-left align-middle text-xs font-semibold uppercase text-zinc-600", className)} {...props} />
   );
 }
 
