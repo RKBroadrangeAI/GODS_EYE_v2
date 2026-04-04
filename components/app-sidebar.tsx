@@ -63,10 +63,10 @@ const dashboardLinks = [
   { href: "/app/inventory-tiers",                label: "Inventory Tiers" },
   { href: "/app/brand-performance",              label: "Brand Performance" },
   { href: "/app/inventory-mix",                  label: "Inventory Mix" },
+  { href: "/app/inventory-mix-per-sales-person", label: "Inv Mix / Associate" },
   { href: "/app/lead-performance",               label: "Lead Performance" },
   { href: "/app/lead-perf-m2m",                 label: "Lead Perf M2M" },
   { href: "/app/brand-perf-m2m",               label: "Brand Perf M2M" },
-  { href: "/app/inventory-mix-per-sales-person", label: "Inv Mix / Associate" },
 ] as const;
 
 export function AppSidebar({ role, name }: SidebarProps) {
@@ -113,6 +113,10 @@ export function AppSidebar({ role, name }: SidebarProps) {
           icon={<LayoutDashboard className="h-4 w-4 shrink-0" />}
           active={pathname === "/app"}
         />
+
+        <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+          Sales
+        </p>
         <SidebarLink
           href="/app/enter-sale"
           label="Enter Sale"
@@ -122,7 +126,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
         {canManage ? (
           <SidebarLink
             href="/app/sales-detail"
-            label="Sales Detail"
+            label="Data Log"
             icon={<Table2 className="h-4 w-4 shrink-0" />}
             active={pathname === "/app/sales-detail"}
           />
