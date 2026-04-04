@@ -24,6 +24,8 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   LogOut,
+  Bot,
+  FileDown,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import type { AppRole } from "@/types/database";
@@ -151,6 +153,24 @@ export function AppSidebar({ role, name }: SidebarProps) {
               active={pathname === link.href}
             />
           ))}
+
+        <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+          Tools
+        </p>
+        <SidebarLink
+          href="/app/ai-assistant"
+          label="AI Assistant"
+          icon={<Bot className="h-4 w-4 shrink-0" />}
+          active={pathname === "/app/ai-assistant"}
+        />
+        {canManage ? (
+          <SidebarLink
+            href="/app/export"
+            label="Export & Backup"
+            icon={<FileDown className="h-4 w-4 shrink-0" />}
+            active={pathname === "/app/export"}
+          />
+        ) : null}
 
         {canManage ? (
           <>
