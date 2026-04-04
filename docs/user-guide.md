@@ -45,7 +45,7 @@
 - Read-only reference for grading standards.
 
 ## 7. AI Features
-- Right panel: **God's Eye AI Assistant** for Q&A, forecasts, anomalies.
+- **Ask Larry** page for AI Q&A, forecasts, anomalies.
 - Smart Recommendations card on each dashboard.
 - Dashboard Home: Daily insights + alerts.
 - One-click **Generate Executive Summary PDF**.

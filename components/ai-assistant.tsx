@@ -49,7 +49,7 @@ export function AIAssistant() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Bot className="h-4 w-4" />
-          God&apos;s Eye AI Assistant
+          Ask Larry
         </CardTitle>
       </CardHeader>
       <CardContent className="flex h-[calc(100%-70px)] flex-col gap-3">
@@ -81,7 +81,7 @@ export function AIAssistant() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask God’s Eye AI"
+            placeholder="Ask Larry..."
           />
           <Button disabled={loading} onClick={() => send()}>
             <Send className="h-4 w-4" />

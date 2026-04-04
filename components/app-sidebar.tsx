@@ -159,7 +159,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
         </p>
         <SidebarLink
           href="/app/ai-assistant"
-          label="AI Assistant"
+          label="Ask Larry"
           icon={<Bot className="h-4 w-4 shrink-0" />}
           active={pathname === "/app/ai-assistant"}
         />
