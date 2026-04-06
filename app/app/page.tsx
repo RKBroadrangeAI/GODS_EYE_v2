@@ -76,11 +76,11 @@ export default async function AppHomePage() {
   const currentMonth = new Date().getMonth() + 1; // April = 4
   const monthlyTrend: { month: string; gp: number; units: number }[] = [];
   for (let m = 1; m <= Math.min(currentMonth, 12); m++) {
-    const mStr = String(m).padStart(2, "0");
-    const prefix = `${year}-${mStr}`;
     const scoped = allFacts.filter((r) => {
-      const d = (r as { date_out: string | null }).date_out;
-      return d != null && d.startsWith(prefix);
+      const raw = (r as { date_out: string | Date | null }).date_out;
+      if (raw == null) return false;
+      const d = raw instanceof Date ? raw : new Date(raw);
+      return d.getFullYear() === year && d.getMonth() + 1 === m;
     });
     const agg = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
     monthlyTrend.push({ month: monthNames[m - 1].slice(0, 3), gp: agg.gp, units: agg.units });
