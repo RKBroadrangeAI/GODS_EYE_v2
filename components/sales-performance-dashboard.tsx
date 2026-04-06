@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import Link from "next/link";
 
 type SalesPerformancePayload = {
   month: number;
@@ -215,7 +216,7 @@ function TeamPacingTable({ data }: { data: SalesPerformancePayload }) {
       <TableBody>
         {data.rows.map((row) => (
           <TableRow key={row.salesAssociate}>
-            <TableCell>{row.salesAssociate}</TableCell>
+            <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
             <TableCell>{formatCurrency(row.closedGp)}</TableCell>
             <TableCell>{formatCurrency(row.cashedGp)}</TableCell>
             <TableCell>{formatCurrency(row.gpBudget)}</TableCell>

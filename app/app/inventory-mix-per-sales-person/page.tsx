@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
+import Link from "next/link";
 
 export default async function InventoryMixPerSalesPersonPage({
   searchParams,
@@ -55,7 +56,7 @@ export default async function InventoryMixPerSalesPersonPage({
             <TableBody>
               {data.rows.map((row, index) => (
                 <TableRow key={`${row.salesPerson}-${row.inventoryType}-${index}`}>
-                  <TableCell>{row.salesPerson}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesPerson)}`} className="text-blue-600 hover:underline font-medium">{row.salesPerson}</Link></TableCell>
                   <TableCell>{row.inventoryType}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>

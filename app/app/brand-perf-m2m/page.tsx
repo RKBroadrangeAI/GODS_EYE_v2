@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
 import { getBrandIcon } from "@/lib/brand-icons";
+import Link from "next/link";
 
 export default async function BrandPerfM2MPage({
   searchParams,
@@ -56,7 +57,7 @@ export default async function BrandPerfM2MPage({
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={`${row.brand}-${row.condition}`}>
-                  <TableCell><span className="inline-flex items-center gap-1.5"><span>{getBrandIcon(row.brand)}</span> {row.brand}</span></TableCell>
+                  <TableCell><Link href={`/app/sales-detail?brand=${encodeURIComponent(row.brand)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getBrandIcon(row.brand)}</span> {row.brand}</Link></TableCell>
                   <TableCell>{row.condition}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>
                   <TableCell>{formatPercent(row.unitsShare)}</TableCell>

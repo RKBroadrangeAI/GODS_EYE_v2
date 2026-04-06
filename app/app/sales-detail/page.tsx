@@ -2,12 +2,18 @@ import { requireRoles } from "@/lib/auth";
 import { getSalesDetailRows } from "@/lib/server-data";
 import { SalesDetailTable } from "@/components/sales-detail-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
-export default async function SalesDetailPage() {
+export default async function SalesDetailPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireRoles(["admin", "management"]);
+  const params = await searchParams;
   const rows = await getSalesDetailRows();
 
-  const normalizedRows = rows.map((row) => ({
+  let normalizedRows = rows.map((row) => ({
     id: row.id,
     salesPerson: row.employees?.name ?? "—",
     make: row.brands?.name ?? "—",
@@ -28,12 +34,41 @@ export default async function SalesDetailPage() {
     profit: Number(row.profit ?? 0),
   }));
 
+  /* ── Apply drill-down filters from query params ──────────────── */
+  const filterSalesPerson = typeof params.salesPerson === "string" ? params.salesPerson : undefined;
+  const filterBrand = typeof params.brand === "string" ? params.brand : undefined;
+  const filterSource = typeof params.source === "string" ? params.source : undefined;
+  const filterCondition = typeof params.condition === "string" ? params.condition : undefined;
+
+  if (filterSalesPerson) normalizedRows = normalizedRows.filter((r) => r.salesPerson === filterSalesPerson);
+  if (filterBrand) normalizedRows = normalizedRows.filter((r) => r.make.toUpperCase() === filterBrand.toUpperCase());
+  if (filterSource) normalizedRows = normalizedRows.filter((r) => r.source.toUpperCase() === filterSource.toUpperCase());
+  if (filterCondition) normalizedRows = normalizedRows.filter((r) => r.condition.toUpperCase() === filterCondition.toUpperCase());
+
+  const activeFilter = filterSalesPerson ?? filterBrand ?? filterSource ?? filterCondition;
+
   return (
     <section className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold">Sales Detail Page</h1>
         <p className="text-sm text-zinc-500">Management edit view for all sales transactions.</p>
       </div>
+
+      {activeFilter && (
+        <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm">
+          <span className="font-medium text-blue-700">
+            Filtered by: {filterSalesPerson && `Sales Person = ${filterSalesPerson}`}
+            {filterBrand && `Brand = ${filterBrand}`}
+            {filterSource && `Source = ${filterSource}`}
+            {filterCondition && `Condition = ${filterCondition}`}
+          </span>
+          <span className="text-blue-500">({normalizedRows.length} transactions)</span>
+          <Link href="/app/sales-detail" className="ml-auto text-blue-600 hover:underline">
+            Clear filter
+          </Link>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Transactions</CardTitle>

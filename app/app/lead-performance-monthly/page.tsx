@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
+import Link from "next/link";
 
 export default async function LeadPerformanceMonthlyPage({
   searchParams,
@@ -57,7 +58,7 @@ export default async function LeadPerformanceMonthlyPage({
             <TableBody>
               {data.rows.map((row) => (
                 <TableRow key={row.leadSource}>
-                  <TableCell>{row.leadSource}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.leadSource)}`} className="text-blue-600 hover:underline font-medium">{row.leadSource}</Link></TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{formatCurrency(row.gpBudget)}</TableCell>
                   <TableCell>{formatCurrency(row.pacingGp)}</TableCell>

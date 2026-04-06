@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
+import Link from "next/link";
 
 export default async function LeadPerfM2MPage({
   searchParams,
@@ -55,7 +56,7 @@ export default async function LeadPerfM2MPage({
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.source}>
-                  <TableCell>{row.source}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.source)}`} className="text-blue-600 hover:underline font-medium">{row.source}</Link></TableCell>
                   <TableCell>{formatPercent(row.salesShare)}</TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>

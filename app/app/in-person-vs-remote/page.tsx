@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getPeopleMap } from "@/lib/analytics";
+import Link from "next/link";
 
 export default async function InPersonVsRemotePage({
   searchParams,
@@ -55,7 +56,7 @@ export default async function InPersonVsRemotePage({
             <TableBody>
               {data.rows.map((row) => (
                 <TableRow key={row.category}>
-                  <TableCell>{row.category}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?condition=${encodeURIComponent(row.category)}`} className="text-blue-600 hover:underline font-medium">{row.category}</Link></TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{row.count}</TableCell>
                   <TableCell>{formatPercent(row.dealsShare)}</TableCell>
