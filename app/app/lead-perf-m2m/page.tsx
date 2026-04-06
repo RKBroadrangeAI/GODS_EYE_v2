@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
 import Link from "next/link";
+import { getLeadIcon } from "@/lib/lead-icons";
 
 export default async function LeadPerfM2MPage({
   searchParams,
@@ -56,7 +57,7 @@ export default async function LeadPerfM2MPage({
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.source}>
-                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.source)}`} className="text-blue-600 hover:underline font-medium">{row.source}</Link></TableCell>
+                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.source)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getLeadIcon(row.source)}</span> {row.source}</Link></TableCell>
                   <TableCell>{formatPercent(row.salesShare)}</TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
