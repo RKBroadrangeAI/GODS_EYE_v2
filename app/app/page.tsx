@@ -104,19 +104,17 @@ export default async function AppHomePage() {
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col gap-2 overflow-hidden">
       {/* Logo header */}
-      <div className="flex items-center justify-center gap-3 shrink-0">
+      <div className="flex flex-col items-center justify-center shrink-0">
         <Image
           src="/God's_Eye_Stable_official_logo.jpg"
           alt="God's Eye"
-          width={48}
-          height={48}
-          className="rounded-lg object-contain"
+          width={120}
+          height={120}
+          className="rounded-xl object-contain"
           unoptimized
         />
-        <div>
-          <h1 className="text-xl font-bold tracking-wide text-orange-500">GOD&apos;S EYE</h1>
-          <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year}</p>
-        </div>
+        <h1 className="mt-2 text-2xl font-extrabold tracking-wide text-orange-500">GOD&apos;S EYE</h1>
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year}</p>
       </div>
 
       {/* Charts fill remaining space */}
