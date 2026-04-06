@@ -27,7 +27,7 @@ export default async function BrandPerfM2MPage({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-2xl font-bold">BRAND PERF M2M</h1>
           <p className="text-sm text-zinc-500">Brand month-over-month snapshot.</p>

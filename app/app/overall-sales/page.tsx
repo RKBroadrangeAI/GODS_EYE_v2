@@ -25,7 +25,7 @@ export default async function OverallSalesPage({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-2xl font-bold">OVERALL SALES</h1>
           <p className="text-sm text-zinc-500">Annual sales performance by associate.</p>

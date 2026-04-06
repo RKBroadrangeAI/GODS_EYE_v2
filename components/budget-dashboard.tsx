@@ -106,7 +106,7 @@ export function BudgetDashboard({ rows }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center gap-3">
         <CardTitle>Budget 2026</CardTitle>
         <div className="flex items-center gap-2">
           <select
