@@ -56,7 +56,7 @@ export default async function InPersonVsRemotePage({
             <TableBody>
               {data.rows.map((row) => (
                 <TableRow key={row.category}>
-                  <TableCell><Link href={`/app/sales-detail?condition=${encodeURIComponent(row.category)}`} className="text-blue-600 hover:underline font-medium">{row.category}</Link></TableCell>
+                  <TableCell><Link href={`/app/sales-detail?channel=${encodeURIComponent(row.category)}`} className="text-blue-600 hover:underline font-medium">{row.category}</Link></TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{row.count}</TableCell>
                   <TableCell>{formatPercent(row.dealsShare)}</TableCell>

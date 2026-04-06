@@ -79,8 +79,7 @@ export async function getSalesDetailRows(): Promise<SalesDetailQueryRow[]> {
      LEFT JOIN condition_types ct ON ct.id = s.condition_type_id
      LEFT JOIN in_person_options ip ON ip.id = s.in_person_option_id
      LEFT JOIN lead_sources    ls ON ls.id = s.lead_source_id
-     ORDER BY s.date_out DESC NULLS LAST
-     LIMIT 1000`,
+     ORDER BY s.date_out DESC NULLS LAST`,
   );
 
   return rows.map((row) => ({

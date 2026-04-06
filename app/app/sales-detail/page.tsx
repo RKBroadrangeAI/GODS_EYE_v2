@@ -39,13 +39,15 @@ export default async function SalesDetailPage({
   const filterBrand = typeof params.brand === "string" ? params.brand : undefined;
   const filterSource = typeof params.source === "string" ? params.source : undefined;
   const filterCondition = typeof params.condition === "string" ? params.condition : undefined;
+  const filterChannel = typeof params.channel === "string" ? params.channel : undefined;
 
-  if (filterSalesPerson) normalizedRows = normalizedRows.filter((r) => r.salesPerson === filterSalesPerson);
+  if (filterSalesPerson) normalizedRows = normalizedRows.filter((r) => r.salesPerson.toUpperCase() === filterSalesPerson.toUpperCase());
   if (filterBrand) normalizedRows = normalizedRows.filter((r) => r.make.toUpperCase() === filterBrand.toUpperCase());
   if (filterSource) normalizedRows = normalizedRows.filter((r) => r.source.toUpperCase() === filterSource.toUpperCase());
   if (filterCondition) normalizedRows = normalizedRows.filter((r) => r.condition.toUpperCase() === filterCondition.toUpperCase());
+  if (filterChannel) normalizedRows = normalizedRows.filter((r) => r.inPerson.toUpperCase() === filterChannel.toUpperCase());
 
-  const activeFilter = filterSalesPerson ?? filterBrand ?? filterSource ?? filterCondition;
+  const activeFilter = filterSalesPerson ?? filterBrand ?? filterSource ?? filterCondition ?? filterChannel;
 
   return (
     <section className="space-y-4">
@@ -61,6 +63,7 @@ export default async function SalesDetailPage({
             {filterBrand && `Brand = ${filterBrand}`}
             {filterSource && `Source = ${filterSource}`}
             {filterCondition && `Condition = ${filterCondition}`}
+            {filterChannel && `Channel = ${filterChannel}`}
           </span>
           <span className="text-blue-500">({normalizedRows.length} transactions)</span>
           <Link href="/app/sales-detail" className="ml-auto text-blue-600 hover:underline">
