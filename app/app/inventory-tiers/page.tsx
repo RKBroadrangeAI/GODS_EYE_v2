@@ -1,18 +1,41 @@
 import { requireAuth } from "@/lib/auth";
-import { getInventoryTiersData } from "@/lib/dashboard-data";
+import { getInventoryTiersData, parseEntityFilter } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { DashboardSelectForm } from "@/components/dashboard-select-form";
+import { getPeopleMap } from "@/lib/analytics";
 
-export default async function InventoryTiersPage() {
+export default async function InventoryTiersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAuth();
-  const data = await getInventoryTiersData(90);
+  const params = await searchParams;
+  const filter = parseEntityFilter(params);
+
+  const [data, people] = await Promise.all([
+    getInventoryTiersData(90, filter),
+    getPeopleMap(false),
+  ]);
+  const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <section className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">INVENTORY TIERS</h1>
-        <p className="text-sm text-zinc-500">Sold inventory grouped by price brackets.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">INVENTORY TIERS</h1>
+          <p className="text-sm text-zinc-500">Sold inventory grouped by price brackets.</p>
+        </div>
+        <DashboardSelectForm
+          withMonth={false}
+          withYear={false}
+          entityLabel="Sales Associate"
+          entityParam="person"
+          entityOptions={personOptions}
+          entityValue={filter.personId}
+        />
       </div>
       <Card>
         <CardHeader>

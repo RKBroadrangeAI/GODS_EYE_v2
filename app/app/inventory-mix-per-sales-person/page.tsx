@@ -1,9 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
-import { getInventoryMixPerSalespersonData } from "@/lib/dashboard-data";
+import { getInventoryMixPerSalespersonData, parseEntityFilter } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { getPeopleMap } from "@/lib/analytics";
 
 export default async function InventoryMixPerSalesPersonPage({
   searchParams,
@@ -14,7 +15,13 @@ export default async function InventoryMixPerSalesPersonPage({
   const params = await searchParams;
   const month = Number(params.month ?? new Date().getMonth() + 1);
   const year = Number(params.year ?? 2026);
-  const data = await getInventoryMixPerSalespersonData(month, year);
+  const filter = parseEntityFilter(params);
+
+  const [data, people] = await Promise.all([
+    getInventoryMixPerSalespersonData(month, year, filter),
+    getPeopleMap(false),
+  ]);
+  const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <section className="space-y-4">
@@ -23,7 +30,14 @@ export default async function InventoryMixPerSalesPersonPage({
           <h1 className="text-2xl font-bold">INVENTORY MIX PER SALES PERSON</h1>
           <p className="text-sm text-zinc-500">Monthly inventory type pacing by salesperson.</p>
         </div>
-        <DashboardSelectForm month={month} year={year} />
+        <DashboardSelectForm
+          month={month}
+          year={year}
+          entityLabel="Sales Associate"
+          entityParam="person"
+          entityOptions={personOptions}
+          entityValue={filter.personId}
+        />
       </div>
       <Card>
         <CardHeader>

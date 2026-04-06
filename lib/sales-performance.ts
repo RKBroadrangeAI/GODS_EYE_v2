@@ -47,7 +47,7 @@ export type SalesPerformanceRow = {
   averagePrice: number | null;
 };
 
-export async function getSalesPerformanceData(month: number, year = 2026) {
+export async function getSalesPerformanceData(month: number, year = 2026, personId?: string) {
   const today = new Date();
   const startDay = startOfMonth(new Date(year, month - 1, 1));
   const endDay = endOfMonth(startDay);
@@ -64,9 +64,14 @@ export async function getSalesPerformanceData(month: number, year = 2026) {
   const endStr = format(endDay, "yyyy-MM-dd");
 
   const [employeesResult, salesResult, budgetsResult] = await Promise.all([
-    pool.query<EmployeeRow>(
-      `SELECT id, name FROM employees WHERE is_active = true ORDER BY name`,
-    ),
+    personId
+      ? pool.query<EmployeeRow>(
+          `SELECT id, name FROM employees WHERE is_active = true AND id = $1 ORDER BY name`,
+          [personId],
+        )
+      : pool.query<EmployeeRow>(
+          `SELECT id, name FROM employees WHERE is_active = true ORDER BY name`,
+        ),
     pool.query<SalesRow>(
       `SELECT sales_person_id, is_cashed, profit, sold_for, age_days
        FROM sales

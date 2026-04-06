@@ -13,19 +13,57 @@ export const monthNames = [
   "December",
 ] as const;
 
-export const dashboardLinks = [
-  { href: "/app/sales-performance", label: "SALES PERFORMANCE" },
+export const budgetLinks = [
   { href: "/app/budget-2026", label: "Budget 2026" },
-  { href: "/app/overall-sales", label: "OVERALL SALES" },
-  { href: "/app/in-person-vs-remote", label: "IN PERSON vs REMOTE" },
-  { href: "/app/lead-performance-monthly", label: "LEAD PERFORMANCE Monthly" },
-  { href: "/app/inventory-tiers", label: "INVENTORY TIERS" },
-  { href: "/app/brand-performance", label: "BRAND PERFORMANCE" },
-  { href: "/app/inventory-mix", label: "INVENTORY MIX" },
-  { href: "/app/lead-performance", label: "LEAD PERFORMANCE" },
-  { href: "/app/lead-perf-m2m", label: "LEAD PERF M2M" },
-  { href: "/app/brand-perf-m2m", label: "BRAND PERF M2M" },
-  { href: "/app/inventory-mix-per-sales-person", label: "INVENTORY MIX PER SALES PERSON" },
+  { href: "/app/budget-2025", label: "Budget 2025" },
+] as const;
+
+export const salesReportLinks = [
+  { href: "/app/overall-sales", label: "By Person" },
+  { href: "/app/sales-performance", label: "By Month" },
+] as const;
+
+export const channelsLinks = [
+  { href: "/app/in-person-vs-remote", label: "In Person vs Remote" },
+  { href: "/app/lead-performance", label: "Channel Performance" },
+  { href: "/app/lead-performance-monthly", label: "Channel Monthly" },
+  { href: "/app/lead-perf-m2m", label: "Channel M2M" },
+] as const;
+
+export const brandsLinks = [
+  { href: "/app/brand-performance", label: "Brand Performance" },
+  { href: "/app/brand-perf-m2m", label: "Brand Perf M2M" },
+] as const;
+
+export const leadsLinks = [
+  { href: "/app/lead-performance", label: "Performance" },
+  { href: "/app/lead-performance-monthly", label: "Monthly Performance" },
+  { href: "/app/lead-perf-m2m", label: "Lead Perf M2M" },
+] as const;
+
+export const inventoryLinks = [
+  { href: "/app/inventory-tiers", label: "Tiers" },
+  { href: "/app/inventory-mix", label: "Mix" },
+  { href: "/app/inventory-mix-per-sales-person", label: "Mix by Associate" },
+] as const;
+
+export const performanceLinks = [
+  { href: "/app/performance/by-lead", label: "By Lead" },
+  { href: "/app/performance/by-associate", label: "By Associate" },
+  { href: "/app/performance/by-month", label: "By Month" },
+  { href: "/app/performance/by-sales", label: "By Sales" },
+  { href: "/app/performance/by-channel", label: "By Channel" },
+] as const;
+
+/** All dashboard links (flat list, used by AI assistant & exports) */
+export const dashboardLinks = [
+  ...budgetLinks,
+  ...salesReportLinks,
+  ...channelsLinks,
+  ...brandsLinks,
+  ...leadsLinks,
+  ...inventoryLinks,
+  ...performanceLinks,
 ] as const;
 
 export const adminLinks = [

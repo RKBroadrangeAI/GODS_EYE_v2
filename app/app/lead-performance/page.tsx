@@ -1,9 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
-import { getLeadPerformanceAnnualData } from "@/lib/dashboard-data";
+import { getLeadPerformanceAnnualData, parseEntityFilter } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { getPeopleMap } from "@/lib/analytics";
 
 export default async function LeadPerformanceAnnualPage({
   searchParams,
@@ -13,7 +14,13 @@ export default async function LeadPerformanceAnnualPage({
   await requireAuth();
   const params = await searchParams;
   const year = Number(params.year ?? 2024);
-  const rows = await getLeadPerformanceAnnualData(year);
+  const filter = parseEntityFilter(params);
+
+  const [rows, people] = await Promise.all([
+    getLeadPerformanceAnnualData(year, filter),
+    getPeopleMap(false),
+  ]);
+  const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <section className="space-y-4">
@@ -22,7 +29,14 @@ export default async function LeadPerformanceAnnualPage({
           <h1 className="text-2xl font-bold">LEAD PERFORMANCE</h1>
           <p className="text-sm text-zinc-500">Annual lead source breakdown.</p>
         </div>
-        <DashboardSelectForm withMonth={false} year={year} />
+        <DashboardSelectForm
+          withMonth={false}
+          year={year}
+          entityLabel="Sales Associate"
+          entityParam="person"
+          entityOptions={personOptions}
+          entityValue={filter.personId}
+        />
       </div>
       <Card>
         <CardHeader>

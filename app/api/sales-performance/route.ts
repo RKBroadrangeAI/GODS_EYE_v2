@@ -6,6 +6,7 @@ import { getRequestAuth } from "@/lib/request-auth";
 const querySchema = z.object({
   month: z.coerce.number().int().min(1).max(12),
   year: z.coerce.number().int().default(2026),
+  person: z.string().optional(),
 });
 
 export async function GET(request: Request) {
@@ -18,12 +19,13 @@ export async function GET(request: Request) {
   const parsed = querySchema.safeParse({
     month: searchParams.get("month") ?? "1",
     year: searchParams.get("year") ?? "2026",
+    person: searchParams.get("person") || undefined,
   });
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  const data = await getSalesPerformanceData(parsed.data.month, parsed.data.year);
+  const data = await getSalesPerformanceData(parsed.data.month, parsed.data.year, parsed.data.person);
   return NextResponse.json(data);
 }

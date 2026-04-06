@@ -6,7 +6,7 @@ import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getPeopleMap } from "@/lib/analytics";
 
-export default async function InPersonVsRemotePage({
+export default async function PerformanceByChannelPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -27,8 +27,8 @@ export default async function InPersonVsRemotePage({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">IN PERSON vs REMOTE</h1>
-          <p className="text-sm text-zinc-500">Monthly category breakdown by channel.</p>
+          <h1 className="text-2xl font-bold">PERFORMANCE BY CHANNEL</h1>
+          <p className="text-sm text-zinc-500">Performance analysis across sales channels.</p>
         </div>
         <DashboardSelectForm
           month={month}
@@ -39,15 +39,46 @@ export default async function InPersonVsRemotePage({
           entityValue={filter.personId}
         />
       </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Total GP</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatCurrency(data.totals.totalGp)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Total Deals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{data.totals.totalCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Average GP/Deal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {formatCurrency(data.totals.totalGp / Math.max(1, data.totals.totalCount))}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year}</CardTitle>
+          <CardTitle>Month {month} / {year} — Channel Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                {["Category", "Gross Profit", "Count", "% of Deals", "% of GP", "GPPU"].map((column) => (
+                {["Channel", "Gross Profit", "Count", "% of Deals", "% of GP", "GPPU"].map((column) => (
                   <TableHead key={column}>{column}</TableHead>
                 ))}
               </TableRow>
@@ -70,14 +101,6 @@ export default async function InPersonVsRemotePage({
                 <TableCell>{formatPercent(1)}</TableCell>
                 <TableCell>{formatPercent(1)}</TableCell>
                 <TableCell>{formatCurrency(data.totals.totalGp / Math.max(1, data.totals.totalCount))}</TableCell>
-              </TableRow>
-              <TableRow className="bg-zinc-50">
-                <TableCell>AVERAGE</TableCell>
-                <TableCell>{formatCurrency(data.totals.totalGp / 2)}</TableCell>
-                <TableCell>{(data.totals.totalCount / 2).toFixed(1)}</TableCell>
-                <TableCell>{formatPercent(0.5)}</TableCell>
-                <TableCell>{formatPercent(0.5)}</TableCell>
-                <TableCell>{formatCurrency((data.totals.totalGp / 2) / Math.max(1, data.totals.totalCount / 2))}</TableCell>
               </TableRow>
             </TableBody>
           </Table>

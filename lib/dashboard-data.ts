@@ -12,8 +12,42 @@ import {
 import { pool } from "@/lib/db";
 import { safeDivide } from "@/lib/format";
 
-export async function getOverallSalesData(year: number) {
-  const facts = await getSalesFactsByYear(year);
+/** Generic fact filter – narrows the dataset to a single entity when provided. */
+export type EntityFilter = {
+  personId?: string;
+  leadId?: string;
+  brandId?: string;
+  channelId?: string;
+};
+
+/** Parse entity filter from URL searchParams. */
+export function parseEntityFilter(
+  params: Record<string, string | string[] | undefined>,
+): EntityFilter {
+  const str = (v: string | string[] | undefined) => (typeof v === "string" && v ? v : undefined);
+  return {
+    personId: str(params.person),
+    leadId: str(params.lead),
+    brandId: str(params.brand),
+    channelId: str(params.channel),
+  };
+}
+
+function applyEntityFilter<
+  T extends { sales_person_id: string; lead_source_id: string | null; brand_id: string | null; in_person_option_id: string | null },
+>(facts: T[], filter?: EntityFilter): T[] {
+  if (!filter) return facts;
+  let result = facts;
+  if (filter.personId) result = result.filter((r) => r.sales_person_id === filter.personId);
+  if (filter.leadId) result = result.filter((r) => r.lead_source_id === filter.leadId);
+  if (filter.brandId) result = result.filter((r) => r.brand_id === filter.brandId);
+  if (filter.channelId) result = result.filter((r) => r.in_person_option_id === filter.channelId);
+  return result;
+}
+
+export async function getOverallSalesData(year: number, filter?: EntityFilter) {
+  const allFacts = await getSalesFactsByYear(year);
+  const facts = applyEntityFilter(allFacts, filter);
   const people = await getPeopleMap();
 
   const rows = people.map((person) => {
@@ -65,8 +99,9 @@ export async function getOverallSalesData(year: number) {
   };
 }
 
-export async function getInPersonRemoteData(month: number, year: number) {
-  const facts = await getSalesFactsByMonth(month, year);
+export async function getInPersonRemoteData(month: number, year: number, filter?: EntityFilter) {
+  const allFacts = await getSalesFactsByMonth(month, year);
+  const facts = applyEntityFilter(allFacts, filter);
   const map = await getLookupMap("in_person_options");
 
   const categories = ["In Person", "Remote"].map((label) => {
@@ -90,12 +125,13 @@ export async function getInPersonRemoteData(month: number, year: number) {
   };
 }
 
-export async function getLeadPerformanceMonthlyData(month: number, year: number) {
-  const [facts, leadMap, header] = await Promise.all([
+export async function getLeadPerformanceMonthlyData(month: number, year: number, filter?: EntityFilter) {
+  const [allFacts, leadMap, header] = await Promise.all([
     getSalesFactsByMonth(month, year),
     getLookupMap("lead_sources"),
     Promise.resolve(buildPacingHeader(month, year)),
   ]);
+  const facts = applyEntityFilter(allFacts, filter);
 
   const budgetResult = await pool.query<{
     lead_source_id: string;
@@ -192,19 +228,24 @@ export async function getLeadPerformanceMonthlyData(month: number, year: number)
   };
 }
 
-export async function getInventoryTiersData(totalDays = 90) {
+export async function getInventoryTiersData(totalDays = 90, filter?: EntityFilter) {
   const endDate = new Date();
   const startDate = subDays(endDate, totalDays);
 
-  const { rows } = await pool.query<{ sold_for: string; profit: string; age_days: number | null }>(
-    `SELECT sold_for, profit, age_days
+  const { rows } = await pool.query<{
+    sold_for: string; profit: string; age_days: number | null;
+    sales_person_id: string; lead_source_id: string | null; brand_id: string | null; in_person_option_id: string | null;
+  }>(
+    `SELECT sold_for, profit, age_days, sales_person_id, lead_source_id, brand_id, in_person_option_id
      FROM sales
      WHERE date_out >= $1 AND date_out <= $2
        AND is_cashed = true`,
     [format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
   );
 
-  const salesRows = rows.map((row) => ({
+  const filteredRows = applyEntityFilter(rows, filter);
+
+  const salesRows = filteredRows.map((row) => ({
     sold_for: Number(row.sold_for ?? 0),
     profit: Number(row.profit ?? 0),
     age_days: row.age_days,
@@ -224,12 +265,13 @@ export async function getInventoryTiersData(totalDays = 90) {
   };
 }
 
-export async function getBrandPerformanceData(year: number) {
-  const [facts, brandMap, conditionMap] = await Promise.all([
+export async function getBrandPerformanceData(year: number, filter?: EntityFilter) {
+  const [allFacts, brandMap, conditionMap] = await Promise.all([
     getSalesFactsByYear(year),
     getLookupMap("brands"),
     getLookupMap("condition_types"),
   ]);
+  const facts = applyEntityFilter(allFacts, filter);
 
   const totalUnits = facts.length;
   const totalGp = facts.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
@@ -272,12 +314,13 @@ export async function getBrandPerformanceData(year: number) {
   return { rows };
 }
 
-export async function getBrandPerformanceM2MData(month: number, year: number) {
-  const [facts, brandMap, conditionMap] = await Promise.all([
+export async function getBrandPerformanceM2MData(month: number, year: number, filter?: EntityFilter) {
+  const [allFacts, brandMap, conditionMap] = await Promise.all([
     getSalesFactsByMonth(month, year),
     getLookupMap("brands"),
     getLookupMap("condition_types"),
   ]);
+  const facts = applyEntityFilter(allFacts, filter);
 
   const totalUnits = facts.length;
   const totalGp = facts.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
@@ -320,12 +363,13 @@ export async function getBrandPerformanceM2MData(month: number, year: number) {
   return rows;
 }
 
-export async function getInventoryMixData(month: number, year: number) {
-  const [facts, header] = await Promise.all([
+export async function getInventoryMixData(month: number, year: number, filter?: EntityFilter) {
+  const [allFacts, header] = await Promise.all([
     getSalesFactsByMonth(month, year),
     Promise.resolve(buildPacingHeader(month, year)),
   ]);
 
+  const facts = applyEntityFilter(allFacts, filter);
   const conditionMap = await getLookupMap("condition_types");
   const totals = aggregateCoreMetrics(facts);
 
@@ -380,13 +424,14 @@ export async function getInventoryMixData(month: number, year: number) {
   return { header, rows };
 }
 
-export async function getInventoryMixPerSalespersonData(month: number, year: number) {
-  const [facts, people, conditionMap, header] = await Promise.all([
+export async function getInventoryMixPerSalespersonData(month: number, year: number, filter?: EntityFilter) {
+  const [allFacts, people, conditionMap, header] = await Promise.all([
     getSalesFactsByMonth(month, year),
     getPeopleMap(),
     getLookupMap("condition_types"),
     Promise.resolve(buildPacingHeader(month, year)),
   ]);
+  const facts = applyEntityFilter(allFacts, filter);
 
   const rows: Array<{
     salesPerson: string;
@@ -432,8 +477,9 @@ export async function getInventoryMixPerSalespersonData(month: number, year: num
   return { header, rows };
 }
 
-export async function getLeadPerformanceAnnualData(year: number) {
-  const [facts, leadMap] = await Promise.all([getSalesFactsByYear(year), getLookupMap("lead_sources")]);
+export async function getLeadPerformanceAnnualData(year: number, filter?: EntityFilter) {
+  const [allFacts, leadMap] = await Promise.all([getSalesFactsByYear(year), getLookupMap("lead_sources")]);
+  const facts = applyEntityFilter(allFacts, filter);
   const totalCount = facts.length;
 
   return Array.from(leadMap.entries()).map(([id, name]) => {
@@ -451,8 +497,9 @@ export async function getLeadPerformanceAnnualData(year: number) {
   });
 }
 
-export async function getLeadPerformanceM2MData(month: number, year: number) {
-  const [facts, leadMap] = await Promise.all([getSalesFactsByMonth(month, year), getLookupMap("lead_sources")]);
+export async function getLeadPerformanceM2MData(month: number, year: number, filter?: EntityFilter) {
+  const [allFacts, leadMap] = await Promise.all([getSalesFactsByMonth(month, year), getLookupMap("lead_sources")]);
+  const facts = applyEntityFilter(allFacts, filter);
   const totalCount = facts.length;
 
   return Array.from(leadMap.entries()).map(([id, name]) => {

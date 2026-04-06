@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { getPeopleMap } from "@/lib/analytics";
 
-export default async function OverallSalesPage({
+export default async function PerformanceBySalesPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,8 +26,8 @@ export default async function OverallSalesPage({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">OVERALL SALES</h1>
-          <p className="text-sm text-zinc-500">Annual sales performance by associate.</p>
+          <h1 className="text-2xl font-bold">PERFORMANCE BY SALES</h1>
+          <p className="text-sm text-zinc-500">Performance analysis by sales volume and revenue.</p>
         </div>
         <DashboardSelectForm
           withMonth={false}
@@ -38,9 +38,46 @@ export default async function OverallSalesPage({
           entityValue={filter.personId}
         />
       </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Total Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatCurrency(data.totals.revenue)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Total Gross Profit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatCurrency(data.totals.grossProfit)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Total Units</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{data.totals.units}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-zinc-500">Overall Margin</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatPercent(data.totals.margin)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Year {year}</CardTitle>
+          <CardTitle>Year {year} — Sales Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -48,13 +85,13 @@ export default async function OverallSalesPage({
               <TableRow>
                 {[
                   "Sales Associate",
+                  "Revenue",
                   "Gross Profit",
                   "Units",
-                  "Revenue",
                   "GP/PU",
-                  "Aging",
                   "Margin",
                   "Ave Price",
+                  "Aging",
                 ].map((column) => (
                   <TableHead key={column}>{column}</TableHead>
                 ))}
@@ -64,34 +101,24 @@ export default async function OverallSalesPage({
               {data.rows.map((row) => (
                 <TableRow key={row.salesAssociate}>
                   <TableCell>{row.salesAssociate}</TableCell>
+                  <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.grossProfit)}</TableCell>
                   <TableCell>{row.units}</TableCell>
-                  <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gppu)}</TableCell>
-                  <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
                   <TableCell>{formatPercent(row.margin)}</TableCell>
                   <TableCell>{formatCurrency(row.avePrice)}</TableCell>
+                  <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
                 </TableRow>
               ))}
-              <TableRow className="bg-zinc-50">
-                <TableCell>Average</TableCell>
-                <TableCell>{formatCurrency(data.average.grossProfit)}</TableCell>
-                <TableCell>{data.average.units.toFixed(1)}</TableCell>
-                <TableCell>{formatCurrency(data.average.revenue)}</TableCell>
-                <TableCell>{formatCurrency(data.average.gppu)}</TableCell>
-                <TableCell>{data.average.aging == null ? "—" : data.average.aging.toFixed(1)}</TableCell>
-                <TableCell>{formatPercent(data.average.margin)}</TableCell>
-                <TableCell>{formatCurrency(data.average.avePrice)}</TableCell>
-              </TableRow>
               <TableRow className="bg-zinc-100 font-semibold">
                 <TableCell>Total</TableCell>
+                <TableCell>{formatCurrency(data.totals.revenue)}</TableCell>
                 <TableCell>{formatCurrency(data.totals.grossProfit)}</TableCell>
                 <TableCell>{data.totals.units}</TableCell>
-                <TableCell>{formatCurrency(data.totals.revenue)}</TableCell>
                 <TableCell>{formatCurrency(data.totals.gppu)}</TableCell>
-                <TableCell>—</TableCell>
                 <TableCell>{formatPercent(data.totals.margin)}</TableCell>
                 <TableCell>{formatCurrency(data.totals.avePrice)}</TableCell>
+                <TableCell>—</TableCell>
               </TableRow>
             </TableBody>
           </Table>

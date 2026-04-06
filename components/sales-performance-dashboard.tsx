@@ -53,15 +53,25 @@ type SalesPerformancePayload = {
   average: Record<string, number | null>;
 };
 
-export function SalesPerformanceDashboard({ initialData }: { initialData: SalesPerformancePayload }) {
+type PersonOption = { value: string; label: string };
+
+export function SalesPerformanceDashboard({
+  initialData,
+  personOptions = [],
+}: {
+  initialData: SalesPerformancePayload;
+  personOptions?: PersonOption[];
+}) {
   const [data, setData] = useState(initialData);
   const [month, setMonth] = useState(initialData.month);
+  const [person, setPerson] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function onMonthChange(nextMonth: number) {
-    setMonth(nextMonth);
+  async function fetchData(nextMonth: number, nextPerson: string) {
     setLoading(true);
-    const response = await fetch(`/api/sales-performance?month=${nextMonth}&year=2026`, {
+    const params = new URLSearchParams({ month: String(nextMonth), year: "2026" });
+    if (nextPerson) params.set("person", nextPerson);
+    const response = await fetch(`/api/sales-performance?${params.toString()}`, {
       cache: "no-store",
     });
 
@@ -71,6 +81,16 @@ export function SalesPerformanceDashboard({ initialData }: { initialData: SalesP
     }
 
     setLoading(false);
+  }
+
+  function onMonthChange(nextMonth: number) {
+    setMonth(nextMonth);
+    fetchData(nextMonth, person);
+  }
+
+  function onPersonChange(nextPerson: string) {
+    setPerson(nextPerson);
+    fetchData(month, nextPerson);
   }
 
   const chartData = useMemo(
@@ -121,6 +141,25 @@ export function SalesPerformanceDashboard({ initialData }: { initialData: SalesP
                 </option>
               ))}
             </select>
+
+            {personOptions.length > 0 && (
+              <>
+                <label className="text-sm font-medium">Person</label>
+                <select
+                  className="h-10 rounded-md border border-zinc-300 px-3 text-sm"
+                  value={person}
+                  onChange={(event) => onPersonChange(event.target.value)}
+                >
+                  <option value="">All People</option>
+                  {personOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+
             {loading ? <span className="text-sm text-zinc-500">Loading...</span> : null}
           </div>
 

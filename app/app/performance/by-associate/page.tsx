@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { getPeopleMap } from "@/lib/analytics";
 
-export default async function OverallSalesPage({
+export default async function PerformanceByAssociatePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,8 +26,8 @@ export default async function OverallSalesPage({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">OVERALL SALES</h1>
-          <p className="text-sm text-zinc-500">Annual sales performance by associate.</p>
+          <h1 className="text-2xl font-bold">PERFORMANCE BY ASSOCIATE</h1>
+          <p className="text-sm text-zinc-500">Individual sales associate performance metrics.</p>
         </div>
         <DashboardSelectForm
           withMonth={false}

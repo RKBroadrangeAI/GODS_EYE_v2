@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -26,6 +26,11 @@ import {
   LogOut,
   Bot,
   FileDown,
+  ChevronDown,
+  ChevronRight,
+  Activity,
+  Radio,
+  Gauge,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import type { AppRole } from "@/types/database";
@@ -35,20 +40,51 @@ type SidebarProps = {
   name: string;
 };
 
-const navIconMap: Record<string, ReactNode> = {
-  "/app/sales-performance":              <BarChart2 className="h-4 w-4 shrink-0" />,
-  "/app/budget-2026":                    <DollarSign className="h-4 w-4 shrink-0" />,
-  "/app/overall-sales":                  <TrendingUp className="h-4 w-4 shrink-0" />,
-  "/app/in-person-vs-remote":            <Users className="h-4 w-4 shrink-0" />,
-  "/app/lead-performance-monthly":       <Target className="h-4 w-4 shrink-0" />,
-  "/app/inventory-tiers":                <Layers className="h-4 w-4 shrink-0" />,
-  "/app/brand-performance":              <Award className="h-4 w-4 shrink-0" />,
-  "/app/inventory-mix":                  <PieChart className="h-4 w-4 shrink-0" />,
-  "/app/lead-performance":               <LineChart className="h-4 w-4 shrink-0" />,
-  "/app/lead-perf-m2m":                 <ArrowLeftRight className="h-4 w-4 shrink-0" />,
-  "/app/brand-perf-m2m":               <ArrowLeftRight className="h-4 w-4 shrink-0" />,
-  "/app/inventory-mix-per-sales-person": <UserCheck className="h-4 w-4 shrink-0" />,
-};
+/* ── Category definitions ─────────────────────────────────────── */
+
+type NavItem = { href: string; label: string; icon: ReactNode };
+
+const budgetLinks: NavItem[] = [
+  { href: "/app/budget-2026", label: "Budget 2026", icon: <DollarSign className="h-4 w-4 shrink-0" /> },
+  { href: "/app/budget-2025", label: "Budget 2025", icon: <DollarSign className="h-4 w-4 shrink-0" /> },
+];
+
+const salesLinks: NavItem[] = [
+  { href: "/app/overall-sales",      label: "By Person",  icon: <TrendingUp className="h-4 w-4 shrink-0" /> },
+  { href: "/app/sales-performance",  label: "By Month",   icon: <BarChart2 className="h-4 w-4 shrink-0" /> },
+];
+
+const channelsLinks: NavItem[] = [
+  { href: "/app/in-person-vs-remote", label: "In Person vs Remote", icon: <Users className="h-4 w-4 shrink-0" /> },
+  { href: "/app/lead-performance",    label: "Channel Performance", icon: <LineChart className="h-4 w-4 shrink-0" /> },
+  { href: "/app/lead-performance-monthly", label: "Channel Monthly", icon: <Target className="h-4 w-4 shrink-0" /> },
+  { href: "/app/lead-perf-m2m",       label: "Channel M2M",         icon: <ArrowLeftRight className="h-4 w-4 shrink-0" /> },
+];
+
+const brandsLinks: NavItem[] = [
+  { href: "/app/brand-performance", label: "Brand Performance", icon: <Award className="h-4 w-4 shrink-0" /> },
+  { href: "/app/brand-perf-m2m",    label: "Brand Perf M2M",    icon: <ArrowLeftRight className="h-4 w-4 shrink-0" /> },
+];
+
+const leadsLinks: NavItem[] = [
+  { href: "/app/lead-performance",         label: "Performance",         icon: <LineChart className="h-4 w-4 shrink-0" /> },
+  { href: "/app/lead-performance-monthly", label: "Monthly Performance", icon: <Target className="h-4 w-4 shrink-0" /> },
+  { href: "/app/lead-perf-m2m",            label: "Lead Perf M2M",       icon: <ArrowLeftRight className="h-4 w-4 shrink-0" /> },
+];
+
+const inventoryLinks: NavItem[] = [
+  { href: "/app/inventory-tiers",                label: "Tiers",            icon: <Layers className="h-4 w-4 shrink-0" /> },
+  { href: "/app/inventory-mix",                  label: "Mix",              icon: <PieChart className="h-4 w-4 shrink-0" /> },
+  { href: "/app/inventory-mix-per-sales-person", label: "Mix by Associate", icon: <UserCheck className="h-4 w-4 shrink-0" /> },
+];
+
+const performanceLinks: NavItem[] = [
+  { href: "/app/performance/by-lead",      label: "By Lead",      icon: <Target className="h-4 w-4 shrink-0" /> },
+  { href: "/app/performance/by-associate", label: "By Associate", icon: <Users className="h-4 w-4 shrink-0" /> },
+  { href: "/app/performance/by-month",     label: "By Month",     icon: <Activity className="h-4 w-4 shrink-0" /> },
+  { href: "/app/performance/by-sales",     label: "By Sales",     icon: <Radio className="h-4 w-4 shrink-0" /> },
+  { href: "/app/performance/by-channel",   label: "By Channel",   icon: <Gauge className="h-4 w-4 shrink-0" /> },
+];
 
 const adminIconMap: Record<string, ReactNode> = {
   "/app/admin/employees":       <Users2 className="h-4 w-4 shrink-0" />,
@@ -56,26 +92,26 @@ const adminIconMap: Record<string, ReactNode> = {
   "/app/admin/condition-scale": <SlidersHorizontal className="h-4 w-4 shrink-0" />,
 };
 
-const dashboardLinks = [
-  { href: "/app/budget-2026",                    label: "Budget 2026" },
-  { href: "/app/overall-sales",                  label: "Overall Sales" },
-  { href: "/app/in-person-vs-remote",            label: "In Person vs Remote" },
-  { href: "/app/sales-performance",              label: "Sales Performance" },
-  { href: "/app/lead-performance-monthly",       label: "Lead Perf Monthly" },
-  { href: "/app/inventory-tiers",                label: "Inventory Tiers" },
-  { href: "/app/brand-performance",              label: "Brand Performance" },
-  { href: "/app/inventory-mix",                  label: "Inventory Mix" },
-  { href: "/app/inventory-mix-per-sales-person", label: "Inv Mix / Associate" },
-  { href: "/app/lead-performance",               label: "Lead Performance" },
-  { href: "/app/lead-perf-m2m",                 label: "Lead Perf M2M" },
-  { href: "/app/brand-perf-m2m",               label: "Brand Perf M2M" },
-] as const;
-
 export function AppSidebar({ role, name }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const canManage = role === "admin" || role === "management";
+  const isBudgetHidden = role === "sales_associate" || role === "view_only";
+
+  /* Collapsed state per category – all open by default */
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    budget: true,
+    sales: true,
+    channels: true,
+    brands: true,
+    leads: true,
+    inventory: true,
+    performance: true,
+  });
+
+  const toggle = (key: string) =>
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
   async function signOut() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -109,6 +145,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+        {/* Dashboard */}
         <SidebarLink
           href="/app"
           label="Dashboard"
@@ -116,6 +153,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
           active={pathname === "/app"}
         />
 
+        {/* Sales entry section */}
         <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
           Sales
         </p>
@@ -134,26 +172,128 @@ export function AppSidebar({ role, name }: SidebarProps) {
           />
         ) : null}
 
-        <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
-          Reports
-        </p>
+        {/* ── BUDGET ── */}
+        {!isBudgetHidden && (
+          <CollapsibleSection
+            label="Budget"
+            expanded={expanded.budget}
+            onToggle={() => toggle("budget")}
+          >
+            {budgetLinks.map((link) => (
+              <SidebarLink
+                key={link.href}
+                href={link.href}
+                label={link.label}
+                icon={link.icon}
+                active={pathname === link.href}
+              />
+            ))}
+          </CollapsibleSection>
+        )}
 
-        {dashboardLinks
-          .filter((link) =>
-            role === "sales_associate" || role === "view_only"
-              ? link.href !== "/app/budget-2026"
-              : true,
-          )
-          .map((link) => (
+        {/* ── SALES REPORTS ── */}
+        <CollapsibleSection
+          label="Sales Reports"
+          expanded={expanded.sales}
+          onToggle={() => toggle("sales")}
+        >
+          {salesLinks.map((link) => (
             <SidebarLink
               key={link.href}
               href={link.href}
               label={link.label}
-              icon={navIconMap[link.href] ?? <BarChart2 className="h-4 w-4 shrink-0" />}
+              icon={link.icon}
               active={pathname === link.href}
             />
           ))}
+        </CollapsibleSection>
 
+        {/* ── CHANNELS ── */}
+        <CollapsibleSection
+          label="Channels"
+          expanded={expanded.channels}
+          onToggle={() => toggle("channels")}
+        >
+          {channelsLinks.map((link) => (
+            <SidebarLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              icon={link.icon}
+              active={pathname === link.href}
+            />
+          ))}
+        </CollapsibleSection>
+
+        {/* ── BRANDS ── */}
+        <CollapsibleSection
+          label="Brands"
+          expanded={expanded.brands}
+          onToggle={() => toggle("brands")}
+        >
+          {brandsLinks.map((link) => (
+            <SidebarLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              icon={link.icon}
+              active={pathname === link.href}
+            />
+          ))}
+        </CollapsibleSection>
+
+        {/* ── LEADS ── */}
+        <CollapsibleSection
+          label="Leads"
+          expanded={expanded.leads}
+          onToggle={() => toggle("leads")}
+        >
+          {leadsLinks.map((link) => (
+            <SidebarLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              icon={link.icon}
+              active={pathname === link.href}
+            />
+          ))}
+        </CollapsibleSection>
+
+        {/* ── INVENTORY ── */}
+        <CollapsibleSection
+          label="Inventory"
+          expanded={expanded.inventory}
+          onToggle={() => toggle("inventory")}
+        >
+          {inventoryLinks.map((link) => (
+            <SidebarLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              icon={link.icon}
+              active={pathname === link.href}
+            />
+          ))}
+        </CollapsibleSection>
+
+        {/* ── PERFORMANCE ── */}
+        <CollapsibleSection
+          label="Performance"
+          expanded={expanded.performance}
+          onToggle={() => toggle("performance")}
+        >
+          {performanceLinks.map((link) => (
+            <SidebarLink
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              icon={link.icon}
+              active={pathname === link.href}
+            />
+          ))}
+        </CollapsibleSection>
+
+        {/* ── TOOLS ── */}
         <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
           Tools
         </p>
@@ -172,6 +312,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
           />
         ) : null}
 
+        {/* ── ADMIN ── */}
         {canManage ? (
           <>
             <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
@@ -203,6 +344,39 @@ export function AppSidebar({ role, name }: SidebarProps) {
     </aside>
   );
 }
+
+/* ── Collapsible section wrapper ──────────────────────────────── */
+
+function CollapsibleSection({
+  label,
+  expanded,
+  onToggle,
+  children,
+}: {
+  label: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="pt-3">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center gap-1 px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown className="h-3 w-3 shrink-0" />
+        ) : (
+          <ChevronRight className="h-3 w-3 shrink-0" />
+        )}
+        <span>{label}</span>
+      </button>
+      {expanded && <div className="space-y-0.5">{children}</div>}
+    </div>
+  );
+}
+
+/* ── Single sidebar link ──────────────────────────────────────── */
 
 function SidebarLink({
   href,

@@ -1,23 +1,23 @@
 import { requireAuth } from "@/lib/auth";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
-import { getBrandPerformanceData, parseEntityFilter } from "@/lib/dashboard-data";
+import { getLeadPerformanceAnnualData, parseEntityFilter } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
 
-export default async function BrandPerformancePage({
+export default async function PerformanceByLeadPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAuth();
   const params = await searchParams;
-  const year = Number(params.year ?? 2025);
+  const year = Number(params.year ?? 2026);
   const filter = parseEntityFilter(params);
 
-  const [data, people] = await Promise.all([
-    getBrandPerformanceData(year, filter),
+  const [rows, people] = await Promise.all([
+    getLeadPerformanceAnnualData(year, filter),
     getPeopleMap(false),
   ]);
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
@@ -26,8 +26,8 @@ export default async function BrandPerformancePage({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">BRAND PERFORMANCE</h1>
-          <p className="text-sm text-zinc-500">Annual brand-level metrics.</p>
+          <h1 className="text-2xl font-bold">PERFORMANCE BY LEAD</h1>
+          <p className="text-sm text-zinc-500">Performance metrics broken down by lead source.</p>
         </div>
         <DashboardSelectForm
           withMonth={false}
@@ -38,7 +38,6 @@ export default async function BrandPerformancePage({
           entityValue={filter.personId}
         />
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Year {year}</CardTitle>
@@ -47,22 +46,20 @@ export default async function BrandPerformancePage({
           <Table>
             <TableHeader>
               <TableRow>
-                {["Brand", "Condition", "% Of Units", "% of GP", "Revenue", "GP", "Units", "Markup", "Ave. Aging"].map((h) => (
+                {["Lead Source", "% Of Sales", "Revenue", "GP", "Count", "Ave. Margin", "Ave. Aging"].map((h) => (
                   <TableHead key={h}>{h}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.rows.map((row) => (
-                <TableRow key={`${row.brand}-${row.condition}`}>
-                  <TableCell>{row.brand}</TableCell>
-                  <TableCell>{row.condition}</TableCell>
-                  <TableCell>{formatPercent(row.unitsShare)}</TableCell>
-                  <TableCell>{formatPercent(row.gpShare)}</TableCell>
+              {rows.map((row) => (
+                <TableRow key={row.source}>
+                  <TableCell>{row.source}</TableCell>
+                  <TableCell>{formatPercent(row.salesShare)}</TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
-                  <TableCell>{row.units}</TableCell>
-                  <TableCell>{formatPercent(row.markup)}</TableCell>
+                  <TableCell>{row.count}</TableCell>
+                  <TableCell>{formatPercent(row.margin)}</TableCell>
                   <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
                 </TableRow>
               ))}

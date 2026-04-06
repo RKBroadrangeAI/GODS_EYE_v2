@@ -1,9 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
-import { getLeadPerformanceM2MData } from "@/lib/dashboard-data";
+import { getLeadPerformanceM2MData, parseEntityFilter } from "@/lib/dashboard-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { getPeopleMap } from "@/lib/analytics";
 
 export default async function LeadPerfM2MPage({
   searchParams,
@@ -14,7 +15,13 @@ export default async function LeadPerfM2MPage({
   const params = await searchParams;
   const month = Number(params.month ?? new Date().getMonth() + 1);
   const year = Number(params.year ?? 2024);
-  const rows = await getLeadPerformanceM2MData(month, year);
+  const filter = parseEntityFilter(params);
+
+  const [rows, people] = await Promise.all([
+    getLeadPerformanceM2MData(month, year, filter),
+    getPeopleMap(false),
+  ]);
+  const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <section className="space-y-4">
@@ -23,7 +30,14 @@ export default async function LeadPerfM2MPage({
           <h1 className="text-2xl font-bold">LEAD PERF M2M</h1>
           <p className="text-sm text-zinc-500">Lead performance month-to-month snapshot.</p>
         </div>
-        <DashboardSelectForm month={month} year={year} />
+        <DashboardSelectForm
+          month={month}
+          year={year}
+          entityLabel="Sales Associate"
+          entityParam="person"
+          entityOptions={personOptions}
+          entityValue={filter.personId}
+        />
       </div>
       <Card>
         <CardHeader>
