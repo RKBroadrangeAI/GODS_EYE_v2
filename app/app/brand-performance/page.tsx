@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
+import { getBrandIcon } from "@/lib/brand-icons";
 
 export default async function BrandPerformancePage({
   searchParams,
@@ -55,7 +56,7 @@ export default async function BrandPerformancePage({
             <TableBody>
               {data.rows.map((row) => (
                 <TableRow key={`${row.brand}-${row.condition}`}>
-                  <TableCell>{row.brand}</TableCell>
+                  <TableCell><span className="inline-flex items-center gap-1.5"><span>{getBrandIcon(row.brand)}</span> {row.brand}</span></TableCell>
                   <TableCell>{row.condition}</TableCell>
                   <TableCell>{formatPercent(row.unitsShare)}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>
