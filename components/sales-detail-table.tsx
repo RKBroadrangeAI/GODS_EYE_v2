@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/providers";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
 
 type SalesDetailRow = {
   id: string;
@@ -62,8 +63,24 @@ export function SalesDetailTable({ rows }: { rows: SalesDetailRow[] }) {
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor("salesPerson", { header: "SALES PERSON" }),
-      columnHelper.accessor("make", { header: "MAKE" }),
+      columnHelper.display({
+        id: "salesPerson",
+        header: "SALES PERSON",
+        cell: ({ row }) => (
+          <Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.original.salesPerson)}`} className="text-blue-600 hover:underline font-medium">
+            {row.original.salesPerson}
+          </Link>
+        ),
+      }),
+      columnHelper.display({
+        id: "make",
+        header: "MAKE",
+        cell: ({ row }) => (
+          <Link href={`/app/sales-detail?brand=${encodeURIComponent(row.original.make)}`} className="text-blue-600 hover:underline font-medium">
+            {row.original.make}
+          </Link>
+        ),
+      }),
       columnHelper.accessor("condition", { header: "CONDITION" }),
       columnHelper.accessor("stockNumber", { header: "STOCK #" }),
       columnHelper.accessor("reference", { header: "REFERENCE" }),
@@ -94,7 +111,15 @@ export function SalesDetailTable({ rows }: { rows: SalesDetailRow[] }) {
       }),
       columnHelper.accessor("soldTo", { header: "SOLD TO" }),
       columnHelper.accessor("inPerson", { header: "IN PERSON?" }),
-      columnHelper.accessor("source", { header: "SOURCE" }),
+      columnHelper.display({
+        id: "source",
+        header: "SOURCE",
+        cell: ({ row }) => (
+          <Link href={`/app/sales-detail?source=${encodeURIComponent(row.original.source)}`} className="text-blue-600 hover:underline font-medium">
+            {row.original.source}
+          </Link>
+        ),
+      }),
       columnHelper.display({
         id: "cashed",
         header: "CASHED",

@@ -57,7 +57,7 @@ export default async function InventoryMixPerSalesPersonPage({
               {data.rows.map((row, index) => (
                 <TableRow key={`${row.salesPerson}-${row.inventoryType}-${index}`}>
                   <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesPerson)}`} className="text-blue-600 hover:underline font-medium">{row.salesPerson}</Link></TableCell>
-                  <TableCell>{row.inventoryType}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?condition=${encodeURIComponent(row.inventoryType)}`} className="text-blue-600 hover:underline font-medium">{row.inventoryType}</Link></TableCell>
                   <TableCell>{formatCurrency(row.gp)}</TableCell>
                   <TableCell>{formatPercent(row.gpShare)}</TableCell>
                   <TableCell>{formatCurrency(row.pacingGp)}</TableCell>

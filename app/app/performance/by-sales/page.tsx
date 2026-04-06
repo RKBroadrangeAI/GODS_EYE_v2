@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { getPeopleMap } from "@/lib/analytics";
+import Link from "next/link";
 
 export default async function PerformanceBySalesPage({
   searchParams,
@@ -100,7 +101,7 @@ export default async function PerformanceBySalesPage({
             <TableBody>
               {data.rows.map((row) => (
                 <TableRow key={row.salesAssociate}>
-                  <TableCell>{row.salesAssociate}</TableCell>
+                  <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
                   <TableCell>{formatCurrency(row.revenue)}</TableCell>
                   <TableCell>{formatCurrency(row.grossProfit)}</TableCell>
                   <TableCell>{row.units}</TableCell>
