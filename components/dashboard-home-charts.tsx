@@ -21,7 +21,7 @@ import { getBrandIcon } from "@/lib/brand-icons";
 
 /* ── Colors matching mockup section headers ───────────────────── */
 const SECTION = {
-  budgeting: "#2b706f",
+  budgeting: "#22c55e",
   performance: "#d06050",
   channels: "#4a80b5",
   inventory: "#7b5296",
@@ -191,7 +191,7 @@ export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
                 <XAxis dataKey="month" tick={{ fontSize: 8 }} />
                 <YAxis tick={{ fontSize: 8 }} width={30} />
                 <Tooltip />
-                <Line type="monotone" dataKey="units" stroke="#2b706f" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="units" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
