@@ -6,7 +6,7 @@ import { useToast } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Trash2, X } from "lucide-react";
 
 type Employee = {
   id: string;
@@ -87,6 +87,24 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
     startTransition(() => router.refresh());
   }
 
+  async function deleteEmployee(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+    const response = await fetch("/api/admin/employees", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({})) as { error?: string };
+      error(json.error ?? "Failed to delete employee");
+      return;
+    }
+
+    success("Employee deleted");
+    startTransition(() => router.refresh());
+  }
+
   return (
     <div className="space-y-4">
       {isAdmin && (
@@ -108,7 +126,7 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
       <Table>
         <TableHeader>
           <TableRow>
-            {["Name", "Email", "Role", "Initials", "Active", "Action"].map((h) => (
+            {["Name", "Email", "Role", "Initials", "Login", "Active", "Actions"].map((h) => (
               <TableHead key={h}>{h}</TableHead>
             ))}
           </TableRow>
@@ -120,12 +138,65 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
               <TableCell>{row.email ?? "—"}</TableCell>
               <TableCell>{row.role}</TableCell>
               <TableCell>{row.initials ?? "—"}</TableCell>
+              <TableCell>
+                {row.has_password ? (
+                  <span className="text-green-600 text-xs font-medium">✓ Set</span>
+                ) : (
+                  <span className="text-zinc-400 text-xs">None</span>
+                )}
+              </TableCell>
               <TableCell>{row.is_active ? "Yes" : "No"}</TableCell>
               <TableCell>
-                {isAdmin && (
-                  <Button variant="outline" onClick={() => toggleEmployee(row.id, !row.is_active)}>
-                    {row.is_active ? "Deactivate" : "Activate"}
-                  </Button>
+                <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <Button variant="outline" className="h-8 text-xs px-2" onClick={() => toggleEmployee(row.id, !row.is_active)}>
+                      {row.is_active ? "Deactivate" : "Activate"}
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      className="h-8 px-2"
+                      title="Change password"
+                      onClick={() => {
+                        setPasswordFor(passwordFor === row.id ? null : row.id);
+                        setNewPassword("");
+                      }}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      className="h-8 px-2 text-red-500 hover:text-red-700 hover:border-red-300"
+                      title="Delete employee"
+                      onClick={() => deleteEmployee(row.id, row.name)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                {passwordFor === row.id && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input
+                      type="password"
+                      placeholder="New password (min 6)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="h-8 text-xs w-40"
+                    />
+                    <Button className="h-8 text-xs px-2" onClick={() => setPassword(row.id)}>
+                      Save
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="h-8 px-1"
+                      onClick={() => { setPasswordFor(null); setNewPassword(""); }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 )}
               </TableCell>
             </TableRow>

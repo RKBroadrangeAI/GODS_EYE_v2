@@ -37,7 +37,10 @@ export async function POST(request: Request) {
     await pool.query(
       `INSERT INTO employees (name, email, initials, role, is_active, password_hash) VALUES ($1, $2, $3, $4, true, $5)`,
       [
-        parsed.data.name.toUpperCase(),
+        parsed.data.name
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" "),
         parsed.data.email?.toLowerCase() ?? null,
         parsed.data.initials.toUpperCase(),
         parsed.data.role,
@@ -73,6 +76,44 @@ export async function PATCH(request: Request) {
         parsed.data.id,
       ],
     );
+
+    revalidatePath("/app/admin/employees");
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Database error";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+const deleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export async function DELETE(request: Request) {
+  const auth = await getRequestAuth();
+  if (!auth || auth.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const parsed = deleteSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  try {
+    // Check if employee has sales records
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) as cnt FROM sales WHERE sales_person_id = $1`,
+      [parsed.data.id],
+    );
+    if (Number(rows[0].cnt) > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete: employee has sales records. Deactivate instead." },
+        { status: 400 },
+      );
+    }
+
+    await pool.query(`DELETE FROM employees WHERE id = $1`, [parsed.data.id]);
 
     revalidatePath("/app/admin/employees");
     return NextResponse.json({ ok: true });
