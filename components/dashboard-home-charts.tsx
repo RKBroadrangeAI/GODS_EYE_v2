@@ -281,8 +281,24 @@ export function DashboardHomeCharts({
     return { name: p.name, gp: p.gp, prevGp: prev?.gp ?? 0 };
   });
 
+  /* Monthly performance table data */
+  const monthlyPerf = data.monthlyTrend.map((m, i) => {
+    const prev = prevData.monthlyTrend[i];
+    return {
+      month: m.month,
+      gp: m.gp,
+      units: m.units,
+      revenue: m.revenue,
+      gpBudget: m.gpBudget,
+      prevGp: prev?.gp ?? 0,
+      prevUnits: prev?.units ?? 0,
+      prevRevenue: prev?.revenue ?? 0,
+      prevGpBudget: prev?.gpBudget ?? 0,
+    };
+  });
+
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden">
+    <div className="flex h-full flex-col gap-3 overflow-y-auto">
       {/* ── KPI Row ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-stretch gap-2 rounded-xl bg-zinc-100 px-3 py-2.5 shrink-0">
         <KpiBox
@@ -337,8 +353,91 @@ export function DashboardHomeCharts({
         />
       </div>
 
+      {/* ── Sales Performance by Month ──────────────────────── */}
+      <div className="rounded-xl overflow-hidden shadow-md border border-zinc-100 shrink-0">
+        <div
+          className="px-4 py-2.5 text-white text-sm font-bold uppercase tracking-wider text-center"
+          style={{ backgroundColor: "#1e40af" }}
+        >
+          Sales Performance by Month
+        </div>
+        <div className="bg-white p-4 space-y-4">
+          {/* Chart */}
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyPerf} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                <YAxis tickFormatter={compactNum} tick={{ fontSize: 10 }} width={50} />
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="gp" name={`GP ${year}`} fill="#22c55e" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevGp" name={`GP ${prevYear}`} fill="#94a3b8" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="revenue" name={`Rev ${year}`} fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevRevenue" name={`Rev ${prevYear}`} fill="#bfdbfe" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-200">
+                  <th className="text-left py-1.5 px-2 font-bold text-zinc-600">Month</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-emerald-700" colSpan={1}>GP {year}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-zinc-400" colSpan={1}>GP {prevYear}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-zinc-600">GP Δ</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-blue-700">Units {year}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-zinc-400">Units {prevYear}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-blue-700">Rev {year}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-zinc-400">Rev {prevYear}</th>
+                  <th className="text-right py-1.5 px-2 font-bold text-green-700">Budget</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyPerf.map((m) => {
+                  const gpDelta = m.gp - m.prevGp;
+                  return (
+                    <tr key={m.month} className="border-b border-zinc-100 hover:bg-zinc-50">
+                      <td className="py-1.5 px-2 font-semibold text-zinc-700">{m.month}</td>
+                      <td className="py-1.5 px-2 text-right font-semibold text-emerald-700">{formatCurrency(m.gp)}</td>
+                      <td className="py-1.5 px-2 text-right text-zinc-400">{formatCurrency(m.prevGp)}</td>
+                      <td className={`py-1.5 px-2 text-right font-semibold ${gpDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                        {gpDelta >= 0 ? "+" : ""}{formatCurrency(gpDelta)}
+                      </td>
+                      <td className="py-1.5 px-2 text-right text-blue-700">{m.units}</td>
+                      <td className="py-1.5 px-2 text-right text-zinc-400">{m.prevUnits}</td>
+                      <td className="py-1.5 px-2 text-right text-blue-700">{formatCurrency(m.revenue)}</td>
+                      <td className="py-1.5 px-2 text-right text-zinc-400">{formatCurrency(m.prevRevenue)}</td>
+                      <td className="py-1.5 px-2 text-right text-green-700">{formatCurrency(m.gpBudget)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-zinc-300 bg-zinc-50 font-bold">
+                  <td className="py-1.5 px-2 text-zinc-800">Total</td>
+                  <td className="py-1.5 px-2 text-right text-emerald-700">{formatCurrency(monthlyPerf.reduce((s, m) => s + m.gp, 0))}</td>
+                  <td className="py-1.5 px-2 text-right text-zinc-400">{formatCurrency(monthlyPerf.reduce((s, m) => s + m.prevGp, 0))}</td>
+                  <td className={`py-1.5 px-2 text-right ${monthlyPerf.reduce((s, m) => s + m.gp - m.prevGp, 0) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {monthlyPerf.reduce((s, m) => s + m.gp - m.prevGp, 0) >= 0 ? "+" : ""}
+                    {formatCurrency(monthlyPerf.reduce((s, m) => s + m.gp - m.prevGp, 0))}
+                  </td>
+                  <td className="py-1.5 px-2 text-right text-blue-700">{monthlyPerf.reduce((s, m) => s + m.units, 0)}</td>
+                  <td className="py-1.5 px-2 text-right text-zinc-400">{monthlyPerf.reduce((s, m) => s + m.prevUnits, 0)}</td>
+                  <td className="py-1.5 px-2 text-right text-blue-700">{formatCurrency(monthlyPerf.reduce((s, m) => s + m.revenue, 0))}</td>
+                  <td className="py-1.5 px-2 text-right text-zinc-400">{formatCurrency(monthlyPerf.reduce((s, m) => s + m.prevRevenue, 0))}</td>
+                  <td className="py-1.5 px-2 text-right text-green-700">{formatCurrency(monthlyPerf.reduce((s, m) => s + m.gpBudget, 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* ── Section cards grid ──────────────────────────────── */}
-      <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid min-h-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
 
         {/* ── BUDGETING ─────────────────────────────────────── */}
         <SectionCard title="BUDGETING" color={SECTION.budgeting}>
