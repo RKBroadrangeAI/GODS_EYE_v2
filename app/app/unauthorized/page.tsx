@@ -7,7 +7,7 @@ export default function UnauthorizedPage() {
       <h1 className="text-xl font-semibold">Unauthorized</h1>
       <p className="mt-2 text-sm text-zinc-600">You do not have access to this page.</p>
       <Button asChild className="mt-5">
-        <Link href="/app/sales-performance">Back to dashboard</Link>
+        <Link href="/app">Back to dashboard</Link>
       </Button>
     </div>
   );

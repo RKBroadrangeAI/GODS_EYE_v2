@@ -94,7 +94,27 @@ const CATEGORIES: CategoryDef[] = [
 /* ── Page component ───────────────────────────────────────────── */
 
 export default async function MenuPage() {
-  await requireAuth();
+  const auth = await requireAuth();
+  const canManage = auth.role === "admin" || auth.role === "management";
+
+  /* Filter categories and items based on role */
+  const visibleCategories = CATEGORIES
+    .filter((cat) => !(cat.title === "BUDGETING" && !canManage))
+    .map((cat) => {
+      if (cat.title !== "PERFORMANCE") return cat;
+      /* Remove OVER TIME → DAY (sales-detail) for non-management */
+      if (canManage) return cat;
+      return {
+        ...cat,
+        items: cat.items.map((item) => {
+          if (!item.children) return item;
+          return {
+            ...item,
+            children: item.children.filter((c) => c.href !== "/app/sales-detail"),
+          };
+        }),
+      };
+    });
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center bg-zinc-100 px-4 py-8">
@@ -115,7 +135,7 @@ export default async function MenuPage() {
 
       {/* Category grid */}
       <div className="mt-10 grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {CATEGORIES.map((cat) => (
+        {visibleCategories.map((cat) => (
           <CategoryColumn key={cat.title} category={cat} />
         ))}
       </div>
