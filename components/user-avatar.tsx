@@ -1,6 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 export function UserAvatar({
@@ -25,15 +25,14 @@ export function UserAvatar({
 
   if (avatarUrl && !failed) {
     return (
-      <Image
+      <img
         src={avatarUrl}
         alt={name}
         width={size}
         height={size}
-        className={`rounded-full object-cover ${className}`}
+        className={`rounded-full object-cover shrink-0 ${className}`}
         style={{ width: size, height: size }}
         onError={() => setFailed(true)}
-        unoptimized
       />
     );
   }

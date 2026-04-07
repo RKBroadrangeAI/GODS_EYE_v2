@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { pool } from "@/lib/db";
 import { getRequestAuth } from "@/lib/request-auth";
 import { revalidatePath } from "next/cache";
 
-const MAX_SIZE = 2 * 1024 * 1024; // 2 MB
+const MAX_SIZE = 500 * 1024; // 500 KB (will be stored as base64 in DB)
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export async function POST(request: Request) {
@@ -28,23 +26,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Only PNG, JPEG, and WebP images are allowed" }, { status: 400 });
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "File must be under 2 MB" }, { status: 400 });
+    return NextResponse.json({ error: "File must be under 500 KB" }, { status: 400 });
   }
 
-  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const filename = `${targetId}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "avatars");
-
-  await mkdir(dir, { recursive: true });
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), buffer);
+  const base64 = buffer.toString("base64");
+  const dataUrl = `data:${file.type};base64,${base64}`;
 
-  const avatarUrl = `/avatars/${filename}?t=${Date.now()}`;
-  await pool.query("UPDATE employees SET avatar_url = $1 WHERE id = $2", [avatarUrl, targetId]);
+  await pool.query("UPDATE employees SET avatar_url = $1 WHERE id = $2", [dataUrl, targetId]);
 
   revalidatePath("/app/admin/employees");
   revalidatePath("/app");
 
-  return NextResponse.json({ ok: true, avatarUrl });
+  return NextResponse.json({ ok: true, avatarUrl: dataUrl });
 }
