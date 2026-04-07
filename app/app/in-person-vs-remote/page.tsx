@@ -40,7 +40,7 @@ export default async function InPersonVsRemotePage({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold">IN PERSON vs REMOTE</h1>
+          <h1 className="text-2xl font-bold">ONLINE vs IN STORE</h1>
           <p className="text-sm text-zinc-500">Monthly category breakdown by channel.</p>
         </div>
         <DashboardSelectForm

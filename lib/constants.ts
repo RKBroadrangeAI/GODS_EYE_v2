@@ -24,7 +24,7 @@ export const salesReportLinks = [
 ] as const;
 
 export const channelsLinks = [
-  { href: "/app/in-person-vs-remote", label: "In Person vs Remote" },
+  { href: "/app/in-person-vs-remote", label: "Online vs In Store" },
   { href: "/app/lead-performance", label: "Channel Performance" },
   { href: "/app/lead-performance-monthly", label: "Channel Monthly" },
   { href: "/app/lead-perf-m2m", label: "Channel M2M" },
