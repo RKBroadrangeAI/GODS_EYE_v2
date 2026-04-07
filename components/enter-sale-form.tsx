@@ -65,7 +65,7 @@ export function EnterSaleForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Enter Sale Here</CardTitle>
+        <CardTitle>Enter Sales Information Here</CardTitle>
       </CardHeader>
       <CardContent>
         <form

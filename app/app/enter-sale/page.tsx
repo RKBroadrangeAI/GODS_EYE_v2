@@ -9,7 +9,7 @@ export default async function EnterSalePage() {
   return (
     <section className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Enter Sale Here</h1>
+        <h1 className="text-2xl font-bold">Enter Sales Information Here</h1>
         <p className="text-sm text-zinc-500">Create a new transaction. All dashboards update in real time.</p>
       </div>
       <EnterSaleForm {...lookups} />
