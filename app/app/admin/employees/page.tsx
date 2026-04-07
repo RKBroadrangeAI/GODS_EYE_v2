@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminEmployees } from "@/components/admin-employees";
 
 export default async function AdminEmployeesPage() {
-  await requireRoles(["admin", "management"]);
+  const auth = await requireRoles(["admin", "management"]);
   const { rows } = await pool.query<{
     id: string;
     name: string;
@@ -26,7 +26,7 @@ export default async function AdminEmployeesPage() {
           <CardTitle>Employee Roster</CardTitle>
         </CardHeader>
         <CardContent>
-          <AdminEmployees rows={rows} />
+          <AdminEmployees rows={rows} isAdmin={auth.role === "admin"} />
         </CardContent>
       </Card>
     </section>

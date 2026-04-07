@@ -18,7 +18,7 @@ type Employee = {
   has_password: boolean;
 };
 
-export function AdminEmployees({ rows }: { rows: Employee[] }) {
+export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; isAdmin?: boolean }) {
   const router = useRouter();
   const { success, error } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -89,19 +89,21 @@ export function AdminEmployees({ rows }: { rows: Employee[] }) {
 
   return (
     <div className="space-y-4">
-      <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-6">
-        <Input name="name" placeholder="Employee Name" required />
-        <Input name="email" type="email" placeholder="email@company.com" />
-        <Input name="initials" placeholder="AB" required maxLength={4} />
-        <select name="role" className="h-10 rounded-md border border-zinc-300 px-3 text-sm" defaultValue="sales_associate">
-          <option value="admin">admin</option>
-          <option value="management">management</option>
-          <option value="sales_associate">sales_associate</option>
-          <option value="view_only">view_only</option>
-        </select>
-        <Input name="password" type="password" placeholder="Password (min 6)" />
-        <Button type="submit" disabled={isPending}>Add Employee</Button>
-      </form>
+      {isAdmin && (
+        <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-6">
+          <Input name="name" placeholder="Employee Name" required />
+          <Input name="email" type="email" placeholder="email@company.com" />
+          <Input name="initials" placeholder="AB" required maxLength={4} />
+          <select name="role" className="h-10 rounded-md border border-zinc-300 px-3 text-sm" defaultValue="sales_associate">
+            <option value="admin">admin</option>
+            <option value="management">management</option>
+            <option value="sales_associate">sales_associate</option>
+            <option value="view_only">view_only</option>
+          </select>
+          <Input name="password" type="password" placeholder="Password (min 6)" />
+          <Button type="submit" disabled={isPending}>Add Employee</Button>
+        </form>
+      )}
 
       <Table>
         <TableHeader>
@@ -120,9 +122,11 @@ export function AdminEmployees({ rows }: { rows: Employee[] }) {
               <TableCell>{row.initials ?? "—"}</TableCell>
               <TableCell>{row.is_active ? "Yes" : "No"}</TableCell>
               <TableCell>
-                <Button variant="outline" onClick={() => toggleEmployee(row.id, !row.is_active)}>
-                  {row.is_active ? "Deactivate" : "Activate"}
-                </Button>
+                {isAdmin && (
+                  <Button variant="outline" onClick={() => toggleEmployee(row.id, !row.is_active)}>
+                    {row.is_active ? "Deactivate" : "Activate"}
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
