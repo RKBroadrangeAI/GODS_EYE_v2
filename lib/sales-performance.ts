@@ -26,10 +26,12 @@ type BudgetRow = {
 type EmployeeRow = {
   id: string;
   name: string;
+  avatar_url: string | null;
 };
 
 export type SalesPerformanceRow = {
   salesAssociate: string;
+  avatarUrl: string | null;
   closedGp: number;
   cashedGp: number;
   gpBudget: number;
@@ -66,11 +68,11 @@ export async function getSalesPerformanceData(month: number, year = 2026, person
   const [employeesResult, salesResult, budgetsResult] = await Promise.all([
     personId
       ? pool.query<EmployeeRow>(
-          `SELECT id, name FROM employees WHERE is_active = true AND id = $1 ORDER BY name`,
+          `SELECT id, name, avatar_url FROM employees WHERE is_active = true AND id = $1 ORDER BY name`,
           [personId],
         )
       : pool.query<EmployeeRow>(
-          `SELECT id, name FROM employees WHERE is_active = true ORDER BY name`,
+          `SELECT id, name, avatar_url FROM employees WHERE is_active = true ORDER BY name`,
         ),
     pool.query<SalesRow>(
       `SELECT sales_person_id, is_cashed, profit, sold_for, age_days
@@ -121,6 +123,7 @@ export async function getSalesPerformanceData(month: number, year = 2026, person
 
     return {
       salesAssociate: employee.name,
+      avatarUrl: employee.avatar_url,
       closedGp,
       cashedGp,
       gpBudget,

@@ -10,6 +10,7 @@ import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
 import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
+import { UserAvatar } from "@/components/user-avatar";
 
 export default async function OverallSalesPage({
   searchParams,
@@ -98,7 +99,7 @@ export default async function OverallSalesPage({
                 const prev = prevMap.get(row.salesAssociate);
                 return (
                   <TableRow key={row.salesAssociate}>
-                    <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
+                    <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="flex items-center gap-2 text-blue-600 hover:underline font-medium"><UserAvatar name={row.salesAssociate} avatarUrl={row.avatarUrl} size={28} />{row.salesAssociate}</Link></TableCell>
                     <TableCell>{formatCurrency(row.grossProfit)}{prev && <DeltaIndicator current={row.grossProfit} previous={prev.grossProfit} />}</TableCell>
                     <TableCell>{row.units}{prev && <DeltaIndicator current={row.units} previous={prev.units} />}</TableCell>
                     <TableCell>{formatCurrency(row.revenue)}{prev && <DeltaIndicator current={row.revenue} previous={prev.revenue} />}</TableCell>

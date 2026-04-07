@@ -99,15 +99,16 @@ export async function getSalesFactsByYear(year: number) {
 
 export async function getPeopleMap(onlyActive = true) {
   const sql = onlyActive
-    ? `SELECT id, name, is_active FROM employees WHERE is_active = true ORDER BY name`
-    : `SELECT id, name, is_active FROM employees ORDER BY name`;
+    ? `SELECT id, name, is_active, avatar_url FROM employees WHERE is_active = true ORDER BY name`
+    : `SELECT id, name, is_active, avatar_url FROM employees ORDER BY name`;
 
-  const { rows } = await pool.query<{ id: string; name: string; is_active: boolean }>(sql);
+  const { rows } = await pool.query<{ id: string; name: string; is_active: boolean; avatar_url: string | null }>(sql);
 
   return rows.map((person) => ({
     id: person.id,
     name: person.name,
     isActive: person.is_active,
+    avatarUrl: person.avatar_url,
   }));
 }
 

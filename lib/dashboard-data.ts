@@ -55,6 +55,7 @@ export async function getOverallSalesData(year: number, filter?: EntityFilter) {
     const metrics = aggregateCoreMetrics(scoped);
     return {
       salesAssociate: person.name,
+      avatarUrl: person.avatarUrl,
       grossProfit: metrics.gp,
       units: metrics.units,
       revenue: metrics.revenue,

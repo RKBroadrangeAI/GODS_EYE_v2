@@ -39,11 +39,12 @@ import {
 import { adminLinks } from "@/lib/constants";
 import { getBrandImagePath } from "@/lib/brand-icons";
 import { BrandIcon } from "@/components/brand-icon";
+import { UserAvatar } from "@/components/user-avatar";
 import type { AppRole } from "@/types/database";
 
 /* ── Types ────────────────────────────────────────────────────── */
 
-type SidebarProps = { role: AppRole; name: string };
+type SidebarProps = { role: AppRole; name: string; avatarUrl?: string | null };
 
 type NavItem = {
   href: string;
@@ -144,7 +145,7 @@ const adminIconMap: Record<string, ReactNode> = {
 
 /* ── Main component ───────────────────────────────────────────── */
 
-export function AppSidebar({ role, name }: SidebarProps) {
+export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -205,11 +206,14 @@ export function AppSidebar({ role, name }: SidebarProps) {
       </div>
 
       {/* User */}
-      <div className="border-b border-zinc-100 px-5 py-3">
-        <p className="text-sm font-semibold text-zinc-800">{name}</p>
-        <p className="text-[10px] uppercase tracking-wider text-zinc-400">
-          {role.replace("_", " ")}
-        </p>
+      <div className="flex items-center gap-3 border-b border-zinc-100 px-5 py-3">
+        <UserAvatar name={name} avatarUrl={avatarUrl} size={36} />
+        <div>
+          <p className="text-sm font-semibold text-zinc-800">{name}</p>
+          <p className="text-[10px] uppercase tracking-wider text-zinc-400">
+            {role.replace("_", " ")}
+          </p>
+        </div>
       </div>
 
       {/* Navigation */}

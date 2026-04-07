@@ -16,6 +16,7 @@ export default async function SalesDetailPage({
   let normalizedRows = rows.map((row) => ({
     id: row.id,
     salesPerson: row.employees?.name ?? "—",
+    avatarUrl: row.employees?.avatarUrl ?? null,
     make: row.brands?.name ?? "—",
     condition: row.condition_types?.name ?? "—",
     stockNumber: row.stock_number,

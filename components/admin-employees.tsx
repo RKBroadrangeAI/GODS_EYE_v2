@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/providers";
+import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,6 +17,7 @@ type Employee = {
   initials: string | null;
   is_active: boolean;
   has_password: boolean;
+  avatar_url: string | null;
 };
 
 export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; isAdmin?: boolean }) {
@@ -105,6 +107,23 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
     startTransition(() => router.refresh());
   }
 
+  async function uploadAvatar(employeeId: string, file: File) {
+    const formData = new FormData();
+    formData.append("avatar", file);
+    formData.append("employeeId", employeeId);
+    const response = await fetch("/api/admin/avatar", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({})) as { error?: string };
+      error(json.error ?? "Failed to upload avatar");
+      return;
+    }
+    success("Avatar updated");
+    startTransition(() => router.refresh());
+  }
+
   return (
     <div className="space-y-4">
       {isAdmin && (
@@ -126,7 +145,7 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
       <Table>
         <TableHeader>
           <TableRow>
-            {["Name", "Email", "Role", "Initials", "Login", "Active", "Actions"].map((h) => (
+            {["Avatar", "Name", "Email", "Role", "Initials", "Login", "Active", "Actions"].map((h) => (
               <TableHead key={h}>{h}</TableHead>
             ))}
           </TableRow>
@@ -134,6 +153,28 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.id}>
+              <TableCell>
+                <label className="cursor-pointer group relative inline-block">
+                  <UserAvatar name={row.name} avatarUrl={row.avatar_url} size={36} />
+                  {isAdmin && (
+                    <>
+                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span className="text-white text-[9px] font-bold">Edit</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadAvatar(row.id, file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </>
+                  )}
+                </label>
+              </TableCell>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.email ?? "—"}</TableCell>
               <TableCell>{row.role}</TableCell>

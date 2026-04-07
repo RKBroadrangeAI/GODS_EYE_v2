@@ -12,10 +12,12 @@ import { useToast } from "@/components/providers";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
+import { UserAvatar } from "@/components/user-avatar";
 
 type SalesDetailRow = {
   id: string;
   salesPerson: string;
+  avatarUrl: string | null;
   make: string;
   condition: string;
   stockNumber: string | null;
@@ -67,7 +69,8 @@ export function SalesDetailTable({ rows }: { rows: SalesDetailRow[] }) {
         id: "salesPerson",
         header: "SALES PERSON",
         cell: ({ row }) => (
-          <Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.original.salesPerson)}`} className="text-blue-600 hover:underline font-medium">
+          <Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.original.salesPerson)}`} className="flex items-center gap-2 text-blue-600 hover:underline font-medium">
+            <UserAvatar name={row.original.salesPerson} avatarUrl={row.original.avatarUrl} size={24} />
             {row.original.salesPerson}
           </Link>
         ),

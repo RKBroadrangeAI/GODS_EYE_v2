@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import Link from "next/link";
+import { UserAvatar } from "@/components/user-avatar";
 
 type SalesPerformancePayload = {
   month: number;
@@ -34,6 +35,7 @@ type SalesPerformancePayload = {
   };
   rows: Array<{
     salesAssociate: string;
+    avatarUrl: string | null;
     closedGp: number;
     cashedGp: number;
     gpBudget: number;
@@ -216,7 +218,7 @@ function TeamPacingTable({ data }: { data: SalesPerformancePayload }) {
       <TableBody>
         {data.rows.map((row) => (
           <TableRow key={row.salesAssociate}>
-            <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
+            <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="flex items-center gap-2 text-blue-600 hover:underline font-medium"><UserAvatar name={row.salesAssociate} avatarUrl={row.avatarUrl} size={24} />{row.salesAssociate}</Link></TableCell>
             <TableCell>{formatCurrency(row.closedGp)}</TableCell>
             <TableCell>{formatCurrency(row.cashedGp)}</TableCell>
             <TableCell>{formatCurrency(row.gpBudget)}</TableCell>

@@ -13,7 +13,8 @@ export default async function AdminEmployeesPage() {
     initials: string | null;
     is_active: boolean;
     has_password: boolean;
-  }>(`SELECT id, name, email, role, initials, is_active, password_hash IS NOT NULL AS has_password FROM employees ORDER BY name`);
+    avatar_url: string | null;
+  }>(`SELECT id, name, email, role, initials, is_active, password_hash IS NOT NULL AS has_password, avatar_url FROM employees ORDER BY name`);
 
   return (
     <section className="space-y-4">

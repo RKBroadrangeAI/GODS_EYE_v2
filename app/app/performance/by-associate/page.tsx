@@ -10,6 +10,7 @@ import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
 import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
+import { UserAvatar } from "@/components/user-avatar";
 
 type RowData = Awaited<ReturnType<typeof getOverallSalesData>>;
 
@@ -56,8 +57,9 @@ function AssociateTable({
                   <TableCell>
                     <Link
                       href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`}
-                      className="text-blue-600 hover:underline font-medium"
+                      className="flex items-center gap-2 text-blue-600 hover:underline font-medium"
                     >
+                      <UserAvatar name={row.salesAssociate} avatarUrl={row.avatarUrl} size={28} />
                       {row.salesAssociate}
                     </Link>
                   </TableCell>

@@ -14,7 +14,7 @@ export type SalesDetailQueryRow = {
   by_label: string | null;
   margin: number | null;
   profit: number;
-  employees: { name: string } | null;
+  employees: { name: string; avatarUrl: string | null } | null;
   brands: { name: string } | null;
   condition_types: { name: string } | null;
   in_person_options: { name: string } | null;
@@ -61,6 +61,7 @@ export async function getSalesDetailRows(): Promise<SalesDetailQueryRow[]> {
     margin: string | null;
     profit: string;
     employee_name: string | null;
+    employee_avatar_url: string | null;
     brand_name: string | null;
     condition_type_name: string | null;
     in_person_option_name: string | null;
@@ -69,6 +70,7 @@ export async function getSalesDetailRows(): Promise<SalesDetailQueryRow[]> {
     `SELECT s.id, s.stock_number, s.reference, s.year_value, s.date_in, s.date_out,
             s.cost, s.sold_for, s.sold_to, s.is_cashed, s.by_label, s.margin, s.profit,
             e.name  AS employee_name,
+            e.avatar_url AS employee_avatar_url,
             b.name  AS brand_name,
             ct.name AS condition_type_name,
             ip.name AS in_person_option_name,
@@ -96,7 +98,7 @@ export async function getSalesDetailRows(): Promise<SalesDetailQueryRow[]> {
     by_label: row.by_label,
     margin: row.margin != null ? Number(row.margin) : null,
     profit: Number(row.profit),
-    employees: row.employee_name ? { name: row.employee_name } : null,
+    employees: row.employee_name ? { name: row.employee_name, avatarUrl: row.employee_avatar_url } : null,
     brands: row.brand_name ? { name: row.brand_name } : null,
     condition_types: row.condition_type_name ? { name: row.condition_type_name } : null,
     in_person_options: row.in_person_option_name ? { name: row.in_person_option_name } : null,
