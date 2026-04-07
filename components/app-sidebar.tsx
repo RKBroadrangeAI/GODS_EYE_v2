@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronRight,
   Users2,
+  LayoutGrid,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import { getBrandIcon } from "@/lib/brand-icons";
@@ -218,6 +219,12 @@ export function AppSidebar({ role, name }: SidebarProps) {
           label="Dashboard"
           icon={<LayoutDashboard className="h-4 w-4" />}
           active={pathname === "/app"}
+        />
+        <NavLink
+          href="/app/menu"
+          label="Menu"
+          icon={<LayoutGrid className="h-4 w-4" />}
+          active={pathname === "/app/menu"}
         />
 
         {/* Quick actions */}
