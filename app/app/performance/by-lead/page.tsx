@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
+import { parseComparisonParams } from "@/lib/comparison";
+import { ComparisonBanner } from "@/components/comparison-banner";
+import { DeltaIndicator } from "@/components/delta-indicator";
 import Link from "next/link";
 import { getLeadIcon } from "@/lib/lead-icons";
 
@@ -17,12 +20,20 @@ export default async function PerformanceByLeadPage({
   const params = await searchParams;
   const year = Number(params.year ?? 2026);
   const filter = parseEntityFilter(params);
+  const comp = parseComparisonParams(params);
 
   const [rows, people] = await Promise.all([
     getLeadPerformanceAnnualData(year, filter),
     getPeopleMap(false),
   ]);
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
+
+  let prevMap = new Map<string, (typeof rows)[0]>();
+  if (comp.isComparing) {
+    const cy = comp.compareYear ?? year;
+    const prevRows = await getLeadPerformanceAnnualData(cy, filter);
+    for (const r of prevRows) prevMap.set(r.source, r);
+  }
 
   return (
     <section className="space-y-4">
@@ -38,8 +49,10 @@ export default async function PerformanceByLeadPage({
           entityParam="person"
           entityOptions={personOptions}
           entityValue={filter.personId}
+          compareYear={comp.compareYear}
         />
       </div>
+      <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
       <Card>
         <CardHeader>
           <CardTitle>Year {year}</CardTitle>
@@ -54,17 +67,20 @@ export default async function PerformanceByLeadPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.source}>
-                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.source)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getLeadIcon(row.source)}</span> {row.source}</Link></TableCell>
-                  <TableCell>{formatPercent(row.salesShare)}</TableCell>
-                  <TableCell>{formatCurrency(row.revenue)}</TableCell>
-                  <TableCell>{formatCurrency(row.gp)}</TableCell>
-                  <TableCell>{row.count}</TableCell>
-                  <TableCell>{formatPercent(row.margin)}</TableCell>
-                  <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
-                </TableRow>
-              ))}
+              {rows.map((row) => {
+                const prev = prevMap.get(row.source);
+                return (
+                  <TableRow key={row.source}>
+                    <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.source)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getLeadIcon(row.source)}</span> {row.source}</Link></TableCell>
+                    <TableCell>{formatPercent(row.salesShare)}{prev && <DeltaIndicator current={row.salesShare} previous={prev.salesShare} />}</TableCell>
+                    <TableCell>{formatCurrency(row.revenue)}{prev && <DeltaIndicator current={row.revenue} previous={prev.revenue} />}</TableCell>
+                    <TableCell>{formatCurrency(row.gp)}{prev && <DeltaIndicator current={row.gp} previous={prev.gp} />}</TableCell>
+                    <TableCell>{row.count}{prev && <DeltaIndicator current={row.count} previous={prev.count} />}</TableCell>
+                    <TableCell>{formatPercent(row.margin)}{prev && <DeltaIndicator current={row.margin} previous={prev.margin} />}</TableCell>
+                    <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}{prev && <DeltaIndicator current={row.aging} previous={prev.aging} />}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
