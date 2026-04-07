@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -42,7 +43,15 @@ export type DashboardHomeData = {
   brands: { name: string; gp: number; units: number }[];
   channels: { name: string; gp: number; count: number }[];
   inventoryTiers: { tier: string; count: number; gp: number }[];
-  monthlyTrend: { month: string; gp: number; units: number }[];
+  monthlyTrend: {
+    month: string;
+    gp: number;
+    units: number;
+    revenue: number;
+    gpBudget: number;
+    revBudget: number;
+    projectedGp: number;
+  }[];
 };
 
 /* ── Formatters ───────────────────────────────────────────────── */
@@ -118,8 +127,19 @@ function KpiBox({ label, value, accent }: { label: string; value: string; accent
   );
 }
 
+/* ── Budget view types ─────────────────────────────────────────── */
+const BUDGET_VIEWS = [
+  { key: "revBudget", label: "Revenue Budget" },
+  { key: "gp", label: "Actual GP" },
+  { key: "projectedGp", label: "Projected GP" },
+  { key: "delta", label: "YTD Delta" },
+] as const;
+
+type BudgetViewKey = (typeof BUDGET_VIEWS)[number]["key"];
+
 /* ── Main component ───────────────────────────────────────────── */
 export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
+  const [budgetView, setBudgetView] = useState<BudgetViewKey>("gp");
   const maxBrandGp = Math.max(...data.brands.slice(0, 5).map((b) => b.gp), 1);
   const maxTierGp = Math.max(...data.inventoryTiers.map((t) => t.gp), 1);
   const maxLeadGp = Math.max(...data.leadSources.slice(0, 5).map((l) => l.gp), 1);
@@ -150,16 +170,48 @@ export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
       <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {/* ── BUDGETING ─────────────────────────────────────── */}
         <SectionCard title="BUDGETING" color={SECTION.budgeting}>
-          <div className="space-y-1.5">
-            {data.monthlyTrend.map((m) => (
-              <div key={m.month} className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm bg-green-500 shrink-0" />
-                <span className="text-xs font-bold text-zinc-600 w-10">{m.month}</span>
-                <span className="text-xs font-semibold text-zinc-800">
-                  {formatCurrency(m.gp)}
-                </span>
-              </div>
+          {/* Toggle tabs */}
+          <div className="flex flex-wrap gap-1">
+            {BUDGET_VIEWS.map((v) => (
+              <button
+                key={v.key}
+                onClick={() => setBudgetView(v.key)}
+                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                  budgetView === v.key
+                    ? "bg-green-500 text-white"
+                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                }`}
+              >
+                {v.label}
+              </button>
             ))}
+          </div>
+
+          <div className="space-y-1.5">
+            {data.monthlyTrend.map((m) => {
+              let value: number;
+              let prefix = "";
+              if (budgetView === "revBudget") value = m.revBudget;
+              else if (budgetView === "gp") value = m.gp;
+              else if (budgetView === "projectedGp") value = m.projectedGp;
+              else {
+                value = m.gp - m.gpBudget;
+                prefix = value >= 0 ? "+" : "";
+              }
+              return (
+                <div key={m.month} className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-sm bg-green-500 shrink-0" />
+                  <span className="text-xs font-bold text-zinc-600 w-10">{m.month}</span>
+                  <span className={`text-xs font-semibold ${
+                    budgetView === "delta"
+                      ? value >= 0 ? "text-green-600" : "text-red-500"
+                      : "text-zinc-800"
+                  }`}>
+                    {prefix}{formatCurrency(value)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">

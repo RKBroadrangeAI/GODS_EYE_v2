@@ -3,10 +3,12 @@ import { requireAuth } from "@/lib/auth";
 import {
   aggregateCoreMetrics,
   aggregateInventoryTiers,
+  buildPacingHeader,
   getLookupMap,
   getPeopleMap,
   getSalesFactsByYear,
 } from "@/lib/analytics";
+import { pool } from "@/lib/db";
 import { safeDivide } from "@/lib/format";
 import { DashboardHomeCharts, type DashboardHomeData } from "@/components/dashboard-home-charts";
 import { monthNames } from "@/lib/constants";
@@ -15,13 +17,27 @@ export default async function AppHomePage() {
   await requireAuth();
 
   const year = 2026;
-  const [allFacts, people, leadMap, brandMap, channelMap] = await Promise.all([
+  const [allFacts, people, leadMap, brandMap, channelMap, budgetRows] = await Promise.all([
     getSalesFactsByYear(year),
     getPeopleMap(),
     getLookupMap("lead_sources"),
     getLookupMap("brands"),
     getLookupMap("in_person_options"),
+    pool.query<{ month: number; gp_budget: string; revenue_budget: string }>(
+      `SELECT month, COALESCE(SUM(gp_budget), 0) as gp_budget, COALESCE(SUM(revenue_budget), 0) as revenue_budget
+       FROM budgets WHERE year = $1 GROUP BY month ORDER BY month`,
+      [year],
+    ).then((r) => r.rows),
   ]);
+
+  // Build budget lookup by month
+  const budgetByMonth = new Map<number, { gpBudget: number; revBudget: number }>();
+  for (const b of budgetRows) {
+    budgetByMonth.set(b.month, {
+      gpBudget: Number(b.gp_budget),
+      revBudget: Number(b.revenue_budget),
+    });
+  }
 
   // KPIs
   const metrics = aggregateCoreMetrics(
@@ -74,7 +90,15 @@ export default async function AppHomePage() {
 
   // Monthly Trend (YTD)
   const currentMonth = new Date().getMonth() + 1; // April = 4
-  const monthlyTrend: { month: string; gp: number; units: number }[] = [];
+  const monthlyTrend: {
+    month: string;
+    gp: number;
+    units: number;
+    revenue: number;
+    gpBudget: number;
+    revBudget: number;
+    projectedGp: number;
+  }[] = [];
   for (let m = 1; m <= Math.min(currentMonth, 12); m++) {
     const scoped = allFacts.filter((r) => {
       const raw = (r as { date_out: string | Date | null }).date_out;
@@ -83,7 +107,21 @@ export default async function AppHomePage() {
       return d.getFullYear() === year && d.getMonth() + 1 === m;
     });
     const agg = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
-    monthlyTrend.push({ month: monthNames[m - 1].slice(0, 3), gp: agg.gp, units: agg.units });
+    const pacing = buildPacingHeader(m, year);
+    const projectedGp =
+      pacing.daysPassed > 0 && pacing.daysPassed < pacing.daysInMonth
+        ? agg.gp * (pacing.daysInMonth / pacing.daysPassed)
+        : agg.gp;
+    const budget = budgetByMonth.get(m);
+    monthlyTrend.push({
+      month: monthNames[m - 1].slice(0, 3),
+      gp: agg.gp,
+      units: agg.units,
+      revenue: agg.revenue,
+      gpBudget: budget?.gpBudget ?? 0,
+      revBudget: budget?.revBudget ?? 0,
+      projectedGp: Math.round(projectedGp),
+    });
   }
 
   const chartData: DashboardHomeData = {
