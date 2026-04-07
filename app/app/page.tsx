@@ -3,7 +3,6 @@ import { requireAuth } from "@/lib/auth";
 import {
   aggregateCoreMetrics,
   aggregateInventoryTiers,
-  buildPacingHeader,
   getLookupMap,
   getPeopleMap,
   getSalesFactsByYear,
@@ -107,24 +106,11 @@ export default async function AppHomePage() {
       return d.getFullYear() === year && d.getMonth() + 1 === m;
     });
     const agg = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
-    const pacing = buildPacingHeader(m, year);
     const budget = budgetByMonth.get(m);
     const gpBudget = budget?.gpBudget ?? 0;
 
-    // Projected GP: for the current in-progress month, pace actual to full month;
-    // if no sales yet in current month, fall back to GP budget target.
-    // For completed past months, projected = actual.
-    let projectedGp: number;
-    if (pacing.daysPassed >= pacing.daysInMonth) {
-      // Past month — fully completed
-      projectedGp = agg.gp;
-    } else if (pacing.daysPassed > 0 && agg.gp !== 0) {
-      // Current month with some sales data — pace to end of month
-      projectedGp = agg.gp * (pacing.daysInMonth / pacing.daysPassed);
-    } else {
-      // Current/future month with no sales yet — use budget as projection
-      projectedGp = gpBudget;
-    }
+    // Projected GP = the GP Budget target for each month (matches budget page)
+    const projectedGp = gpBudget;
 
     monthlyTrend.push({
       month: monthNames[m - 1].slice(0, 3),
