@@ -32,6 +32,9 @@ import {
   ChevronRight,
   Users2,
   LayoutGrid,
+  Lightbulb,
+  FileBarChart2,
+  Sparkles,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import { getBrandIcon } from "@/lib/brand-icons";
@@ -210,7 +213,10 @@ export function AppSidebar({ role, name }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-        {/* Dashboard */}
+        {/* ── OVERVIEW ─────────────────────── */}
+        <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+          Overview
+        </p>
         <NavLink
           href="/app"
           label="Dashboard"
@@ -224,10 +230,13 @@ export function AppSidebar({ role, name }: SidebarProps) {
           active={pathname === "/app/menu"}
         />
 
-        {/* Quick actions */}
+        {/* ── DATA ENTRY ─────────────────────── */}
+        <p className="px-2 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+          Data Entry
+        </p>
         <NavLink
           href="/app/enter-sale"
-          label="Enter Sale"
+          label="Product Sale"
           icon={<PlusCircle className="h-4 w-4" />}
           active={pathname === "/app/enter-sale"}
         />
@@ -240,7 +249,10 @@ export function AppSidebar({ role, name }: SidebarProps) {
           />
         )}
 
-        {/* Category sections */}
+        {/* ── DATA ANALYSIS ──────────────────── */}
+        <p className="px-2 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+          Data Analysis
+        </p>
         {CATEGORIES.map((cat) => {
           if (cat.managementOnly && isBudgetHidden) return null;
           const isOpen = !!expanded[cat.key];
@@ -326,8 +338,24 @@ export function AppSidebar({ role, name }: SidebarProps) {
           );
         })}
 
-        {/* Tools */}
+        {/* ── AI INSIGHTS (next release) ──── */}
         <div className="pt-4">
+          <div className="flex items-center gap-2 px-2 pb-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-300">
+              AI Insights
+            </p>
+            <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-zinc-400">
+              Coming Soon
+            </span>
+          </div>
+          <DisabledNavLink label="Recommendations" icon={<Lightbulb className="h-4 w-4" />} />
+          <DisabledNavLink label="Reports" icon={<FileBarChart2 className="h-4 w-4" />} />
+          <DisabledNavLink label="Trends" icon={<TrendingUp className="h-4 w-4" />} />
+          <DisabledNavLink label="Predictions" icon={<Sparkles className="h-4 w-4" />} />
+        </div>
+
+        {/* ── TOOLS ───────────────────────────── */}
+        <div className="pt-3">
           <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
             Tools
           </p>
@@ -347,11 +375,11 @@ export function AppSidebar({ role, name }: SidebarProps) {
           )}
         </div>
 
-        {/* Admin */}
+        {/* ── OTHER ───────────────────────────── */}
         {canManage && (
           <div className="pt-3">
             <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Admin
+              Other
             </p>
             {adminLinks.map((link) => (
               <NavLink
@@ -511,5 +539,19 @@ function NavLink({
       {icon}
       <span className="truncate">{label}</span>
     </Link>
+  );
+}
+
+/* ── Disabled nav link (greyed-out placeholder) ───────────────── */
+
+function DisabledNavLink({ label, icon }: { label: string; icon: ReactNode }) {
+  return (
+    <div
+      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 cursor-not-allowed select-none"
+      title="Coming in next release"
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </div>
   );
 }
