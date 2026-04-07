@@ -128,9 +128,6 @@ export default async function MenuPage() {
           className="object-contain"
           unoptimized
         />
-        <h1 className="mt-2 text-2xl font-extrabold tracking-[0.25em] text-orange-500" style={{ fontFamily: "serif" }}>
-          GOD&apos;S EYE
-        </h1>
       </div>
 
       {/* Category grid */}

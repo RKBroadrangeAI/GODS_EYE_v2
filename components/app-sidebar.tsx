@@ -198,9 +198,6 @@ export function AppSidebar({ role, name }: SidebarProps) {
           className="object-contain"
           unoptimized
         />
-        <p className="mt-1 text-sm font-extrabold tracking-wider text-orange-500">
-          GOD&apos;S EYE
-        </p>
       </div>
 
       {/* User */}
