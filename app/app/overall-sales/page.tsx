@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DashboardSelectForm } from "@/components/dashboard-select-form";
 import { getPeopleMap } from "@/lib/analytics";
+import { parseComparisonParams } from "@/lib/comparison";
+import { ComparisonBanner } from "@/components/comparison-banner";
+import { DeltaIndicator } from "@/components/delta-indicator";
 import Link from "next/link";
 
 export default async function OverallSalesPage({
@@ -16,12 +19,20 @@ export default async function OverallSalesPage({
   const params = await searchParams;
   const year = Number(params.year ?? 2026);
   const filter = parseEntityFilter(params);
+  const comp = parseComparisonParams(params);
 
   const [data, people] = await Promise.all([
     getOverallSalesData(year, filter),
     getPeopleMap(false),
   ]);
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
+
+  let prevMap = new Map<string, (typeof data.rows)[0]>();
+  if (comp.isComparing) {
+    const cy = comp.compareYear ?? year;
+    const prevData = await getOverallSalesData(cy, filter);
+    for (const r of prevData.rows) prevMap.set(r.salesAssociate, r);
+  }
 
   return (
     <section className="space-y-4">
@@ -37,8 +48,10 @@ export default async function OverallSalesPage({
           entityParam="person"
           entityOptions={personOptions}
           entityValue={filter.personId}
+          compareYear={comp.compareYear}
         />
       </div>
+      <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
       <Card>
         <CardHeader>
           <CardTitle>Year {year}</CardTitle>
@@ -62,18 +75,21 @@ export default async function OverallSalesPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.rows.map((row) => (
-                <TableRow key={row.salesAssociate}>
-                  <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
-                  <TableCell>{formatCurrency(row.grossProfit)}</TableCell>
-                  <TableCell>{row.units}</TableCell>
-                  <TableCell>{formatCurrency(row.revenue)}</TableCell>
-                  <TableCell>{formatCurrency(row.gppu)}</TableCell>
-                  <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
-                  <TableCell>{formatPercent(row.margin)}</TableCell>
-                  <TableCell>{formatCurrency(row.avePrice)}</TableCell>
-                </TableRow>
-              ))}
+              {data.rows.map((row) => {
+                const prev = prevMap.get(row.salesAssociate);
+                return (
+                  <TableRow key={row.salesAssociate}>
+                    <TableCell><Link href={`/app/sales-detail?salesPerson=${encodeURIComponent(row.salesAssociate)}`} className="text-blue-600 hover:underline font-medium">{row.salesAssociate}</Link></TableCell>
+                    <TableCell>{formatCurrency(row.grossProfit)}{prev && <DeltaIndicator current={row.grossProfit} previous={prev.grossProfit} />}</TableCell>
+                    <TableCell>{row.units}{prev && <DeltaIndicator current={row.units} previous={prev.units} />}</TableCell>
+                    <TableCell>{formatCurrency(row.revenue)}{prev && <DeltaIndicator current={row.revenue} previous={prev.revenue} />}</TableCell>
+                    <TableCell>{formatCurrency(row.gppu)}{prev && prev.gppu != null && row.gppu != null && <DeltaIndicator current={row.gppu} previous={prev.gppu} />}</TableCell>
+                    <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}{prev && prev.aging != null && row.aging != null && <DeltaIndicator current={row.aging} previous={prev.aging} />}</TableCell>
+                    <TableCell>{formatPercent(row.margin)}{prev && prev.margin != null && row.margin != null && <DeltaIndicator current={row.margin} previous={prev.margin} />}</TableCell>
+                    <TableCell>{formatCurrency(row.avePrice)}{prev && prev.avePrice != null && row.avePrice != null && <DeltaIndicator current={row.avePrice} previous={prev.avePrice} />}</TableCell>
+                  </TableRow>
+                );
+              })}
               <TableRow className="bg-zinc-50">
                 <TableCell>Average</TableCell>
                 <TableCell>{formatCurrency(data.average.grossProfit)}</TableCell>

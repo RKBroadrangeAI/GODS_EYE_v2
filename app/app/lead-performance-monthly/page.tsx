@@ -7,6 +7,9 @@ import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
 import Link from "next/link";
 import { getLeadIcon } from "@/lib/lead-icons";
+import { parseComparisonParams } from "@/lib/comparison";
+import { ComparisonBanner } from "@/components/comparison-banner";
+import { DeltaIndicator } from "@/components/delta-indicator";
 
 export default async function LeadPerformanceMonthlyPage({
   searchParams,
@@ -18,12 +21,21 @@ export default async function LeadPerformanceMonthlyPage({
   const month = Number(params.month ?? new Date().getMonth() + 1);
   const year = Number(params.year ?? 2026);
   const filter = parseEntityFilter(params);
+  const comp = parseComparisonParams(params);
 
   const [data, people] = await Promise.all([
     getLeadPerformanceMonthlyData(month, year, filter),
     getPeopleMap(false),
   ]);
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
+
+  let prevMap = new Map<string, (typeof data.rows)[0]>();
+  if (comp.isComparing) {
+    const cm = comp.compareMonth ?? month;
+    const cy = comp.compareYear ?? year;
+    const prevData = await getLeadPerformanceMonthlyData(cm, cy, filter);
+    for (const r of prevData.rows) prevMap.set(r.leadSource, r);
+  }
 
   return (
     <section className="space-y-4">
@@ -39,8 +51,11 @@ export default async function LeadPerformanceMonthlyPage({
           entityParam="person"
           entityOptions={personOptions}
           entityValue={filter.personId}
+          compareMonth={comp.compareMonth}
+          compareYear={comp.compareYear}
         />
       </div>
+      <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
       <Card>
         <CardHeader>
           <CardTitle>
@@ -57,25 +72,28 @@ export default async function LeadPerformanceMonthlyPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.rows.map((row) => (
-                <TableRow key={row.leadSource}>
-                  <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.leadSource)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getLeadIcon(row.leadSource)}</span> {row.leadSource}</Link></TableCell>
-                  <TableCell>{formatCurrency(row.gp)}</TableCell>
-                  <TableCell>{formatCurrency(row.gpBudget)}</TableCell>
-                  <TableCell>{formatCurrency(row.pacingGp)}</TableCell>
-                  <TableCell className={row.overUnderGp != null && row.overUnderGp >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(row.overUnderGp)}</TableCell>
-                  <TableCell>{row.units}</TableCell>
-                  <TableCell>{row.unitBudget.toFixed(1)}</TableCell>
-                  <TableCell>{row.pacingUnits == null ? "—" : row.pacingUnits.toFixed(1)}</TableCell>
-                  <TableCell className={row.overUnderUnits != null && row.overUnderUnits >= 0 ? "text-emerald-600" : "text-red-600"}>{row.overUnderUnits == null ? "—" : row.overUnderUnits.toFixed(1)}</TableCell>
-                  <TableCell>{formatCurrency(row.revenue)}</TableCell>
-                  <TableCell>{formatCurrency(row.pacingRevenue)}</TableCell>
-                  <TableCell>{formatCurrency(row.gppu)}</TableCell>
-                  <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}</TableCell>
-                  <TableCell>{formatPercent(row.margin)}</TableCell>
-                  <TableCell>{formatCurrency(row.avePrice)}</TableCell>
-                </TableRow>
-              ))}
+              {data.rows.map((row) => {
+                const prev = prevMap.get(row.leadSource);
+                return (
+                  <TableRow key={row.leadSource}>
+                    <TableCell><Link href={`/app/sales-detail?source=${encodeURIComponent(row.leadSource)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getLeadIcon(row.leadSource)}</span> {row.leadSource}</Link></TableCell>
+                    <TableCell>{formatCurrency(row.gp)}{prev && <DeltaIndicator current={row.gp} previous={prev.gp} />}</TableCell>
+                    <TableCell>{formatCurrency(row.gpBudget)}</TableCell>
+                    <TableCell>{formatCurrency(row.pacingGp)}</TableCell>
+                    <TableCell className={row.overUnderGp != null && row.overUnderGp >= 0 ? "text-emerald-600" : "text-red-600"}>{formatCurrency(row.overUnderGp)}</TableCell>
+                    <TableCell>{row.units}{prev && <DeltaIndicator current={row.units} previous={prev.units} />}</TableCell>
+                    <TableCell>{row.unitBudget.toFixed(1)}</TableCell>
+                    <TableCell>{row.pacingUnits == null ? "—" : row.pacingUnits.toFixed(1)}</TableCell>
+                    <TableCell className={row.overUnderUnits != null && row.overUnderUnits >= 0 ? "text-emerald-600" : "text-red-600"}>{row.overUnderUnits == null ? "—" : row.overUnderUnits.toFixed(1)}</TableCell>
+                    <TableCell>{formatCurrency(row.revenue)}{prev && <DeltaIndicator current={row.revenue} previous={prev.revenue} />}</TableCell>
+                    <TableCell>{formatCurrency(row.pacingRevenue)}</TableCell>
+                    <TableCell>{formatCurrency(row.gppu)}{prev && <DeltaIndicator current={row.gppu} previous={prev.gppu} />}</TableCell>
+                    <TableCell>{row.aging == null ? "—" : row.aging.toFixed(1)}{prev && prev.aging != null && row.aging != null && <DeltaIndicator current={row.aging} previous={prev.aging} />}</TableCell>
+                    <TableCell>{formatPercent(row.margin)}{prev && <DeltaIndicator current={row.margin} previous={prev.margin} />}</TableCell>
+                    <TableCell>{formatCurrency(row.avePrice)}{prev && <DeltaIndicator current={row.avePrice} previous={prev.avePrice} />}</TableCell>
+                  </TableRow>
+                );
+              })}
               <TableRow className="bg-zinc-50">
                 <TableCell>Average</TableCell>
                 <TableCell>{formatCurrency(data.average.gp)}</TableCell>

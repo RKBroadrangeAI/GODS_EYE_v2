@@ -16,6 +16,10 @@ type Props = {
   entityOptions?: FilterOption[];
   /** Currently selected entity id */
   entityValue?: string;
+  /** Comparison support */
+  withComparison?: boolean;
+  compareMonth?: number;
+  compareYear?: number;
 };
 
 export function DashboardSelectForm({
@@ -27,6 +31,9 @@ export function DashboardSelectForm({
   entityParam,
   entityOptions,
   entityValue,
+  withComparison = true,
+  compareMonth,
+  compareYear,
 }: Props) {
   return (
     <form className="flex flex-wrap items-center gap-2">
@@ -62,6 +69,31 @@ export function DashboardSelectForm({
           ))}
         </select>
       ) : null}
+
+      {withComparison && (
+        <>
+          <span className="text-xs font-semibold text-zinc-400 uppercase">vs</span>
+          {withMonth ? (
+            <select name="compareMonth" defaultValue={String(compareMonth ?? "")} className="h-10 rounded-md border border-zinc-300 px-3 text-sm">
+              <option value="">—</option>
+              {monthNames.map((name, index) => (
+                <option key={name} value={index + 1}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          <select name="compareYear" defaultValue={String(compareYear ?? "")} className="h-10 rounded-md border border-zinc-300 px-3 text-sm">
+            <option value="">—</option>
+            {[2024, 2025, 2026].map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
       <Button type="submit">Apply</Button>
     </form>
   );

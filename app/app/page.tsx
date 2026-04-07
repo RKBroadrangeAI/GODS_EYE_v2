@@ -106,14 +106,14 @@ export default async function AppHomePage() {
       {/* Logo header */}
       <div className="flex flex-col items-center justify-center shrink-0">
         <Image
-          src="/God's_Eye_Stable_official_logo.jpg"
+          src="/God's Eye 2.png"
           alt="God's Eye"
-          width={120}
-          height={120}
-          className="rounded-xl object-contain"
+          width={100}
+          height={100}
+          className="object-contain"
           unoptimized
         />
-        <h1 className="mt-2 text-2xl font-extrabold tracking-wide text-orange-500">GOD&apos;S EYE</h1>
+        <h1 className="mt-1 text-xl font-extrabold tracking-wider text-orange-500">GOD&apos;S EYE</h1>
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year}</p>
       </div>
 
