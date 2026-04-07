@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 export function UserAvatar({
   name,
@@ -11,6 +14,8 @@ export function UserAvatar({
   size?: number;
   className?: string;
 }) {
+  const [failed, setFailed] = useState(false);
+
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -18,7 +23,7 @@ export function UserAvatar({
     .slice(0, 2)
     .toUpperCase();
 
-  if (avatarUrl) {
+  if (avatarUrl && !failed) {
     return (
       <Image
         src={avatarUrl}
@@ -27,6 +32,7 @@ export function UserAvatar({
         height={size}
         className={`rounded-full object-cover ${className}`}
         style={{ width: size, height: size }}
+        onError={() => setFailed(true)}
         unoptimized
       />
     );
