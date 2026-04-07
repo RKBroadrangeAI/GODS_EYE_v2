@@ -37,7 +37,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
-import { getBrandIcon } from "@/lib/brand-icons";
+import { getBrandImagePath } from "@/lib/brand-icons";
+import { BrandIcon } from "@/components/brand-icon";
 import type { AppRole } from "@/types/database";
 
 /* ── Types ────────────────────────────────────────────────────── */
@@ -452,6 +453,7 @@ function CatLink({
     ? searchParams.get(link.entityParam ?? "")
     : null;
   const isBrandEntity = link.entityType === "brands";
+  const hasBrandImage = (name: string) => !!getBrandImagePath(name);
 
   return (
     <div>
@@ -512,7 +514,13 @@ function CatLink({
                 }`}
               >
                 <span className="w-3 text-center text-[9px]">
-                  {isBrandEntity ? getBrandIcon(entity.name) : "•"}
+                  {isBrandEntity && hasBrandImage(entity.name) ? (
+                    <BrandIcon name={entity.name} size={12} />
+                  ) : isBrandEntity ? (
+                    "⌚"
+                  ) : (
+                    "•"
+                  )}
                 </span>
                 <span className="truncate">{entity.name}</span>
               </Link>

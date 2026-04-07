@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { getPeopleMap } from "@/lib/analytics";
-import { getBrandIcon } from "@/lib/brand-icons";
+import { BrandIcon } from "@/components/brand-icon";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
@@ -105,7 +105,7 @@ export default async function BrandPerfM2MPage({
                 const prev = prevMap.get(`${row.brand}-${row.condition}`);
                 return (
                   <TableRow key={`${row.brand}-${row.condition}`}>
-                    <TableCell><Link href={`/app/sales-detail?brand=${encodeURIComponent(row.brand)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><span>{getBrandIcon(row.brand)}</span> {row.brand}</Link></TableCell>
+                    <TableCell><Link href={`/app/sales-detail?brand=${encodeURIComponent(row.brand)}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline font-medium"><BrandIcon name={row.brand} size={18} /> {row.brand}</Link></TableCell>
                     <TableCell>{row.condition}</TableCell>
                     <TableCell>{formatPercent(row.gpShare)}{prev && <DeltaIndicator current={row.gpShare} previous={prev.gpShare} />}</TableCell>
                     <TableCell>{formatPercent(row.unitsShare)}{prev && <DeltaIndicator current={row.unitsShare} previous={prev.unitsShare} />}</TableCell>
