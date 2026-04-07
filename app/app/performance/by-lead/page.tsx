@@ -8,6 +8,7 @@ import { getPeopleMap } from "@/lib/analytics";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 import { getLeadIcon } from "@/lib/lead-icons";
 
@@ -29,11 +30,22 @@ export default async function PerformanceByLeadPage({
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
   let prevMap = new Map<string, (typeof rows)[0]>();
+  let prevRows: typeof rows = [];
   if (comp.isComparing) {
     const cy = comp.compareYear ?? year;
-    const prevRows = await getLeadPerformanceAnnualData(cy, filter);
+    prevRows = await getLeadPerformanceAnnualData(cy, filter);
     for (const r of prevRows) prevMap.set(r.source, r);
   }
+
+  const chartItems = comp.isComparing
+    ? rows
+        .map((r) => ({
+          label: r.source,
+          current: r.gp,
+          previous: prevMap.get(r.source)?.gp ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
 
   return (
     <section className="space-y-4">
@@ -53,6 +65,14 @@ export default async function PerformanceByLeadPage({
         />
       </div>
       <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={String(year)}
+          previousLabel={String(comp.compareYear ?? year)}
+          title="Gross Profit by Lead Source"
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Year {year}</CardTitle>

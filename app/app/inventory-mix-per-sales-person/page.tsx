@@ -8,6 +8,7 @@ import { getPeopleMap } from "@/lib/analytics";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 
 export default async function InventoryMixPerSalesPersonPage({
@@ -36,6 +37,27 @@ export default async function InventoryMixPerSalesPersonPage({
     for (const r of prevData.rows) prevMap.set(`${r.salesPerson}-${r.inventoryType}`, r);
   }
 
+  /* Aggregate GP by sales person for chart */
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const personGpCurrent = new Map<string, number>();
+  const personGpPrev = new Map<string, number>();
+  for (const r of data.rows) personGpCurrent.set(r.salesPerson, (personGpCurrent.get(r.salesPerson) ?? 0) + r.gp);
+  if (comp.isComparing) {
+    for (const r of data.rows) {
+      const prev = prevMap.get(`${r.salesPerson}-${r.inventoryType}`);
+      if (prev) personGpPrev.set(r.salesPerson, (personGpPrev.get(r.salesPerson) ?? 0) + prev.gp);
+    }
+  }
+  const chartItems = comp.isComparing
+    ? Array.from(personGpCurrent.entries())
+        .map(([person, gp]) => ({
+          label: person,
+          current: gp,
+          previous: personGpPrev.get(person) ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -55,6 +77,14 @@ export default async function InventoryMixPerSalesPersonPage({
         />
       </div>
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={`${monthNames[month - 1]} ${year}`}
+          previousLabel={`${monthNames[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
+          title="Gross Profit by Sales Person"
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Month {month} / {year}</CardTitle>

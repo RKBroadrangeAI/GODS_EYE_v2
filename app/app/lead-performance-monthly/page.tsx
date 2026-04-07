@@ -10,6 +10,7 @@ import { getLeadIcon } from "@/lib/lead-icons";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 
 export default async function LeadPerformanceMonthlyPage({
   searchParams,
@@ -37,6 +38,17 @@ export default async function LeadPerformanceMonthlyPage({
     for (const r of prevData.rows) prevMap.set(r.leadSource, r);
   }
 
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const chartItems = comp.isComparing
+    ? data.rows
+        .map((r) => ({
+          label: r.leadSource,
+          current: r.gp,
+          previous: prevMap.get(r.leadSource)?.gp ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -56,6 +68,14 @@ export default async function LeadPerformanceMonthlyPage({
         />
       </div>
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={`${monthNames[month - 1]} ${year}`}
+          previousLabel={`${monthNames[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
+          title="Gross Profit by Lead Source"
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>

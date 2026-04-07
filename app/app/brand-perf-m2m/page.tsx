@@ -9,6 +9,7 @@ import { getBrandIcon } from "@/lib/brand-icons";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 
 export default async function BrandPerfM2MPage({
@@ -38,6 +39,27 @@ export default async function BrandPerfM2MPage({
     for (const r of prevRows) prevMap.set(`${r.brand}-${r.condition}`, r);
   }
 
+  /* Aggregate GP by brand (collapse condition) for chart */
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const brandGpCurrent = new Map<string, number>();
+  const brandGpPrev = new Map<string, number>();
+  for (const r of rows) brandGpCurrent.set(r.brand, (brandGpCurrent.get(r.brand) ?? 0) + r.gp);
+  if (comp.isComparing) {
+    for (const r of rows) {
+      const prev = prevMap.get(`${r.brand}-${r.condition}`);
+      if (prev) brandGpPrev.set(r.brand, (brandGpPrev.get(r.brand) ?? 0) + prev.gp);
+    }
+  }
+  const chartItems = comp.isComparing
+    ? Array.from(brandGpCurrent.entries())
+        .map(([brand, gp]) => ({
+          label: brand,
+          current: gp,
+          previous: brandGpPrev.get(brand) ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -57,6 +79,14 @@ export default async function BrandPerfM2MPage({
         />
       </div>
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={`${monthNames[month - 1]} ${year}`}
+          previousLabel={`${monthNames[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
+          title="Gross Profit by Brand"
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Month {month} / {year}</CardTitle>

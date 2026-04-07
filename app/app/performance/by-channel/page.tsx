@@ -8,6 +8,7 @@ import { getPeopleMap } from "@/lib/analytics";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 
 export default async function PerformanceByChannelPage({
@@ -38,6 +39,17 @@ export default async function PerformanceByChannelPage({
     prevTotals = prevData.totals;
   }
 
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const chartItems = comp.isComparing
+    ? data.rows
+        .map((r) => ({
+          label: r.category,
+          current: r.gp,
+          previous: prevMap.get(r.category)?.gp ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -57,6 +69,14 @@ export default async function PerformanceByChannelPage({
         />
       </div>
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={`${monthNames[month - 1]} ${year}`}
+          previousLabel={`${monthNames[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
+          title="Gross Profit by Channel"
+        />
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">

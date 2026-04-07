@@ -8,6 +8,7 @@ import { getPeopleMap } from "@/lib/analytics";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 
 export default async function PerformanceBySalesPage({
@@ -33,6 +34,16 @@ export default async function PerformanceBySalesPage({
     const prevData = await getOverallSalesData(cy, filter);
     for (const r of prevData.rows) prevMap.set(r.salesAssociate, r);
   }
+
+  const chartItems = comp.isComparing
+    ? data.rows
+        .map((r) => ({
+          label: r.salesAssociate,
+          current: r.grossProfit,
+          previous: prevMap.get(r.salesAssociate)?.grossProfit ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
 
   return (
     <section className="space-y-4">
@@ -89,6 +100,14 @@ export default async function PerformanceBySalesPage({
       </div>
 
       <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
+      {chartItems.length > 0 && (
+        <ComparisonBarChart
+          items={chartItems}
+          currentLabel={String(year)}
+          previousLabel={String(comp.compareYear ?? year)}
+          title="Gross Profit by Sales Associate"
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Year {year} — Sales Breakdown</CardTitle>

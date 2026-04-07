@@ -8,6 +8,7 @@ import { getPeopleMap } from "@/lib/analytics";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { ComparisonBarChart } from "@/components/comparison-bar-chart";
 import Link from "next/link";
 
 type RowData = Awaited<ReturnType<typeof getOverallSalesData>>;
@@ -146,6 +147,17 @@ export default async function PerformanceByAssociatePage({
     for (const r of prevData.rows) prevMap.set(r.salesAssociate, r);
   }
 
+  /* Build chart data when comparing */
+  const chartItems = comp.isComparing && prevData
+    ? data.rows
+        .map((r) => ({
+          label: r.salesAssociate,
+          current: r.grossProfit,
+          previous: prevMap.get(r.salesAssociate)?.grossProfit ?? 0,
+        }))
+        .filter((i) => i.current !== 0 || i.previous !== 0)
+    : [];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -166,19 +178,27 @@ export default async function PerformanceByAssociatePage({
       <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
 
       {comp.isComparing && prevData ? (
-        /* ── Side-by-side tables ────────────────────────────── */
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <AssociateTable
-            yearLabel={year}
-            data={data}
-            prevMap={prevMap}
-            showDelta
+        <>
+          <ComparisonBarChart
+            items={chartItems}
+            currentLabel={String(year)}
+            previousLabel={String(comp.compareYear ?? year)}
+            title="Gross Profit by Associate"
           />
-          <AssociateTable
-            yearLabel={comp.compareYear ?? year}
-            data={prevData}
-          />
-        </div>
+          {/* ── Side-by-side tables ────────────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <AssociateTable
+              yearLabel={year}
+              data={data}
+              prevMap={prevMap}
+              showDelta
+            />
+            <AssociateTable
+              yearLabel={comp.compareYear ?? year}
+              data={prevData}
+            />
+          </div>
+        </>
       ) : (
         /* ── Single table (no comparison) ──────────────────── */
         <AssociateTable yearLabel={year} data={data} />
