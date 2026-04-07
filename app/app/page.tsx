@@ -113,7 +113,6 @@ export default async function AppHomePage() {
           className="object-contain"
           unoptimized
         />
-        <h1 className="mt-1 text-xl font-extrabold tracking-wider text-orange-500">GOD&apos;S EYE</h1>
         <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year}</p>
       </div>
 
