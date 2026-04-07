@@ -67,7 +67,7 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     title: "CHANNELS",
-    headerBg: "bg-teal-700",
+    headerBg: "bg-sky-500",
     dotColors: [
       "bg-sky-200",
       "bg-sky-400",
