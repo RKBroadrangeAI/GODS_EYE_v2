@@ -1,4 +1,4 @@
-import { requireRoles } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { getSalesDetailRows } from "@/lib/server-data";
 import { SalesDetailTable } from "@/components/sales-detail-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ export default async function SalesDetailPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireRoles(["admin", "management"]);
+  await requireAuth();
   const params = await searchParams;
   const rows = await getSalesDetailRows();
 
