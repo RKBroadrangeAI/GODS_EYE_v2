@@ -12,7 +12,8 @@ export default async function AdminEmployeesPage() {
     role: string;
     initials: string | null;
     is_active: boolean;
-  }>(`SELECT id, name, email, role, initials, is_active FROM employees ORDER BY name`);
+    has_password: boolean;
+  }>(`SELECT id, name, email, role, initials, is_active, password_hash IS NOT NULL AS has_password FROM employees ORDER BY name`);
 
   return (
     <section className="space-y-4">

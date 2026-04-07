@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db";
 import { getRequestAuth } from "@/lib/request-auth";
 import { revalidatePath } from "next/cache";
@@ -9,6 +10,7 @@ const createSchema = z.object({
   email: z.string().email().optional(),
   initials: z.string().min(1).max(4),
   role: z.enum(["admin", "management", "sales_associate", "view_only"]),
+  password: z.string().min(6).optional(),
 });
 
 const updateSchema = z.object({
@@ -28,13 +30,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    const passwordHash = parsed.data.password
+      ? await bcrypt.hash(parsed.data.password, 10)
+      : null;
+
     await pool.query(
-      `INSERT INTO employees (name, email, initials, role, is_active) VALUES ($1, $2, $3, $4, true)`,
+      `INSERT INTO employees (name, email, initials, role, is_active, password_hash) VALUES ($1, $2, $3, $4, true, $5)`,
       [
         parsed.data.name.toUpperCase(),
         parsed.data.email?.toLowerCase() ?? null,
         parsed.data.initials.toUpperCase(),
         parsed.data.role,
+        passwordHash,
       ],
     );
 

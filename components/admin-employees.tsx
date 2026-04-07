@@ -1,11 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { KeyRound } from "lucide-react";
 
 type Employee = {
   id: string;
@@ -14,14 +15,18 @@ type Employee = {
   role: string;
   initials: string | null;
   is_active: boolean;
+  has_password: boolean;
 };
 
 export function AdminEmployees({ rows }: { rows: Employee[] }) {
   const router = useRouter();
   const { success, error } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [passwordFor, setPasswordFor] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   async function addEmployee(formData: FormData) {
+    const password = String(formData.get("password") ?? "");
     const response = await fetch("/api/admin/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,6 +35,7 @@ export function AdminEmployees({ rows }: { rows: Employee[] }) {
         email: formData.get("email") || undefined,
         initials: formData.get("initials"),
         role: formData.get("role"),
+        password: password.length >= 6 ? password : undefined,
       }),
     });
 
@@ -58,9 +64,32 @@ export function AdminEmployees({ rows }: { rows: Employee[] }) {
     startTransition(() => router.refresh());
   }
 
+  async function setPassword(employeeId: string) {
+    if (newPassword.length < 6) {
+      error("Password must be at least 6 characters");
+      return;
+    }
+    const response = await fetch("/api/admin/set-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employeeId, password: newPassword }),
+    });
+
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({})) as { error?: string };
+      error(json.error ?? "Failed to set password");
+      return;
+    }
+
+    success("Password updated");
+    setPasswordFor(null);
+    setNewPassword("");
+    startTransition(() => router.refresh());
+  }
+
   return (
     <div className="space-y-4">
-      <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-5">
+      <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-6">
         <Input name="name" placeholder="Employee Name" required />
         <Input name="email" type="email" placeholder="email@company.com" />
         <Input name="initials" placeholder="AB" required maxLength={4} />
@@ -70,6 +99,7 @@ export function AdminEmployees({ rows }: { rows: Employee[] }) {
           <option value="sales_associate">sales_associate</option>
           <option value="view_only">view_only</option>
         </select>
+        <Input name="password" type="password" placeholder="Password (min 6)" />
         <Button type="submit" disabled={isPending}>Add Employee</Button>
       </form>
 
