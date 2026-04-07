@@ -214,7 +214,7 @@ export function AppSidebar({ role, name }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
         {/* ── OVERVIEW ─────────────────────── */}
-        <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+        <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
           Overview
         </p>
         <NavLink
@@ -230,8 +230,10 @@ export function AppSidebar({ role, name }: SidebarProps) {
           active={pathname === "/app/menu"}
         />
 
+        <hr className="my-3 border-zinc-200" />
+
         {/* ── DATA ENTRY ─────────────────────── */}
-        <p className="px-2 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+        <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
           Data Entry
         </p>
         <NavLink
@@ -240,17 +242,11 @@ export function AppSidebar({ role, name }: SidebarProps) {
           icon={<PlusCircle className="h-4 w-4" />}
           active={pathname === "/app/enter-sale"}
         />
-        {canManage && (
-          <NavLink
-            href="/app/sales-detail"
-            label="Data Log"
-            icon={<Table2 className="h-4 w-4" />}
-            active={pathname === "/app/sales-detail"}
-          />
-        )}
+
+        <hr className="my-3 border-zinc-200" />
 
         {/* ── DATA ANALYSIS ──────────────────── */}
-        <p className="px-2 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+        <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
           Data Analysis
         </p>
         {CATEGORIES.map((cat) => {
@@ -338,10 +334,12 @@ export function AppSidebar({ role, name }: SidebarProps) {
           );
         })}
 
+        <hr className="my-3 border-zinc-200" />
+
         {/* ── AI INSIGHTS (next release) ──── */}
-        <div className="pt-4">
+        <div className="pt-1">
           <div className="flex items-center gap-2 px-2 pb-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-300">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-300">
               AI Insights
             </p>
             <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-zinc-400">
@@ -354,9 +352,11 @@ export function AppSidebar({ role, name }: SidebarProps) {
           <DisabledNavLink label="Predictions" icon={<Sparkles className="h-4 w-4" />} />
         </div>
 
+        <hr className="my-3 border-zinc-200" />
+
         {/* ── TOOLS ───────────────────────────── */}
-        <div className="pt-3">
-          <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+        <div className="pt-1">
+          <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
             Tools
           </p>
           <NavLink
@@ -367,6 +367,14 @@ export function AppSidebar({ role, name }: SidebarProps) {
           />
           {canManage && (
             <NavLink
+              href="/app/sales-detail"
+              label="Data Log"
+              icon={<Table2 className="h-4 w-4" />}
+              active={pathname === "/app/sales-detail"}
+            />
+          )}
+          {canManage && (
+            <NavLink
               href="/app/export"
               label="Export & Backup"
               icon={<FileDown className="h-4 w-4" />}
@@ -375,10 +383,12 @@ export function AppSidebar({ role, name }: SidebarProps) {
           )}
         </div>
 
+        <hr className="my-3 border-zinc-200" />
+
         {/* ── OTHER ───────────────────────────── */}
         {canManage && (
-          <div className="pt-3">
-            <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+          <div className="pt-1">
+            <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
               Other
             </p>
             {adminLinks.map((link) => (
