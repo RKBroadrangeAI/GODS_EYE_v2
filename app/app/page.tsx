@@ -8,56 +8,36 @@ import {
   getSalesFactsByYear,
 } from "@/lib/analytics";
 import { pool } from "@/lib/db";
-import { safeDivide } from "@/lib/format";
 import { DashboardHomeCharts, type DashboardHomeData } from "@/components/dashboard-home-charts";
 import { monthNames } from "@/lib/constants";
 
-export default async function AppHomePage() {
-  await requireAuth();
-
-  const year = 2026;
-  const [allFacts, people, leadMap, brandMap, channelMap, budgetRows] = await Promise.all([
-    getSalesFactsByYear(year),
-    getPeopleMap(),
-    getLookupMap("lead_sources"),
-    getLookupMap("brands"),
-    getLookupMap("in_person_options"),
-    pool.query<{ month: number; gp_budget: string; revenue_budget: string }>(
-      `SELECT month, COALESCE(SUM(gp_budget), 0) as gp_budget, COALESCE(SUM(revenue_budget), 0) as revenue_budget
-       FROM budgets WHERE year = $1 GROUP BY month ORDER BY month`,
-      [year],
-    ).then((r) => r.rows),
-  ]);
-
-  // Build budget lookup by month
-  const budgetByMonth = new Map<number, { gpBudget: number; revBudget: number }>();
-  for (const b of budgetRows) {
-    budgetByMonth.set(b.month, {
-      gpBudget: Number(b.gp_budget),
-      revBudget: Number(b.revenue_budget),
-    });
-  }
-
-  // KPIs
+/* ── Helper: build all dashboard data for a given year ──────── */
+function buildYearData(
+  allFacts: Awaited<ReturnType<typeof getSalesFactsByYear>>,
+  people: Awaited<ReturnType<typeof getPeopleMap>>,
+  leadMap: Map<string, string>,
+  brandMap: Map<string, string>,
+  channelMap: Map<string, string>,
+  budgetByMonth: Map<number, { gpBudget: number; revBudget: number }>,
+  year: number,
+  maxMonth: number,
+): DashboardHomeData {
   const metrics = aggregateCoreMetrics(
     allFacts.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })),
   );
 
-  // Sales by Person
   const salesByPerson = people.map((p) => {
     const scoped = allFacts.filter((r) => r.sales_person_id === p.id);
     const m = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
     return { name: p.name, gp: m.gp, units: m.units };
   }).sort((a, b) => b.gp - a.gp);
 
-  // Lead Sources
   const leadSources = Array.from(leadMap.entries()).map(([id, name]) => {
     const scoped = allFacts.filter((r) => r.lead_source_id === id);
     const m = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
     return { name, gp: m.gp, count: m.units };
   }).filter((r) => r.count > 0).sort((a, b) => b.gp - a.gp);
 
-  // Brands (aggregate across conditions)
   const brandAgg = new Map<string, { gp: number; units: number }>();
   for (const fact of allFacts) {
     if (!fact.brand_id) continue;
@@ -70,14 +50,12 @@ export default async function AppHomePage() {
     .map(([id, v]) => ({ name: brandMap.get(id) ?? id, ...v }))
     .sort((a, b) => b.gp - a.gp);
 
-  // Channels
   const channels = Array.from(channelMap.entries()).map(([id, name]) => {
     const scoped = allFacts.filter((r) => r.in_person_option_id === id);
     const m = aggregateCoreMetrics(scoped.map((r) => ({ profit: Number(r.profit), sold_for: Number(r.sold_for), age_days: r.age_days })));
     return { name, gp: m.gp, count: m.units };
   }).filter((r) => r.count > 0);
 
-  // Inventory Tiers (from full year data)
   const tierRows = aggregateInventoryTiers(
     allFacts.map((r) => ({ sold_for: Number(r.sold_for ?? 0), profit: Number(r.profit ?? 0), age_days: r.age_days })),
   );
@@ -87,18 +65,8 @@ export default async function AppHomePage() {
     gp: t.gp,
   })).filter((t) => t.count > 0);
 
-  // Monthly Trend (YTD)
-  const currentMonth = new Date().getMonth() + 1; // April = 4
-  const monthlyTrend: {
-    month: string;
-    gp: number;
-    units: number;
-    revenue: number;
-    gpBudget: number;
-    revBudget: number;
-    projectedGp: number;
-  }[] = [];
-  for (let m = 1; m <= Math.min(currentMonth, 12); m++) {
+  const monthlyTrend: DashboardHomeData["monthlyTrend"] = [];
+  for (let m = 1; m <= Math.min(maxMonth, 12); m++) {
     const scoped = allFacts.filter((r) => {
       const raw = (r as { date_out: string | Date | null }).date_out;
       if (raw == null) return false;
@@ -109,9 +77,6 @@ export default async function AppHomePage() {
     const budget = budgetByMonth.get(m);
     const gpBudget = budget?.gpBudget ?? 0;
 
-    // Projected GP = the GP Budget target for each month (matches budget page)
-    const projectedGp = gpBudget;
-
     monthlyTrend.push({
       month: monthNames[m - 1].slice(0, 3),
       gp: agg.gp,
@@ -119,11 +84,11 @@ export default async function AppHomePage() {
       revenue: agg.revenue,
       gpBudget,
       revBudget: budget?.revBudget ?? 0,
-      projectedGp: Math.round(projectedGp),
+      projectedGp: Math.round(gpBudget),
     });
   }
 
-  const chartData: DashboardHomeData = {
+  return {
     kpis: {
       totalGP: metrics.gp,
       totalUnits: metrics.units,
@@ -137,6 +102,46 @@ export default async function AppHomePage() {
     inventoryTiers,
     monthlyTrend,
   };
+}
+
+export default async function AppHomePage() {
+  await requireAuth();
+
+  const year = 2026;
+  const prevYear = 2025;
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [allFacts, prevFacts, people, leadMap, brandMap, channelMap, budgetRows, prevBudgetRows] = await Promise.all([
+    getSalesFactsByYear(year),
+    getSalesFactsByYear(prevYear),
+    getPeopleMap(),
+    getLookupMap("lead_sources"),
+    getLookupMap("brands"),
+    getLookupMap("in_person_options"),
+    pool.query<{ month: number; gp_budget: string; revenue_budget: string }>(
+      `SELECT month, COALESCE(SUM(gp_budget), 0) as gp_budget, COALESCE(SUM(revenue_budget), 0) as revenue_budget
+       FROM budgets WHERE year = $1 GROUP BY month ORDER BY month`,
+      [year],
+    ).then((r) => r.rows),
+    pool.query<{ month: number; gp_budget: string; revenue_budget: string }>(
+      `SELECT month, COALESCE(SUM(gp_budget), 0) as gp_budget, COALESCE(SUM(revenue_budget), 0) as revenue_budget
+       FROM budgets WHERE year = $1 GROUP BY month ORDER BY month`,
+      [prevYear],
+    ).then((r) => r.rows),
+  ]);
+
+  const budgetByMonth = new Map<number, { gpBudget: number; revBudget: number }>();
+  for (const b of budgetRows) {
+    budgetByMonth.set(b.month, { gpBudget: Number(b.gp_budget), revBudget: Number(b.revenue_budget) });
+  }
+  const prevBudgetByMonth = new Map<number, { gpBudget: number; revBudget: number }>();
+  for (const b of prevBudgetRows) {
+    prevBudgetByMonth.set(b.month, { gpBudget: Number(b.gp_budget), revBudget: Number(b.revenue_budget) });
+  }
+
+  const chartData = buildYearData(allFacts, people, leadMap, brandMap, channelMap, budgetByMonth, year, currentMonth);
+  // For prior year, show same months (Jan–Apr) so comparison is apples-to-apples
+  const prevChartData = buildYearData(prevFacts, people, leadMap, brandMap, channelMap, prevBudgetByMonth, prevYear, currentMonth);
 
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col gap-2 overflow-hidden">
@@ -150,12 +155,12 @@ export default async function AppHomePage() {
           className="object-contain"
           unoptimized
         />
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year}</p>
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year} vs {prevYear}</p>
       </div>
 
       {/* Charts fill remaining space */}
       <div className="flex-1 min-h-0">
-        <DashboardHomeCharts data={chartData} />
+        <DashboardHomeCharts data={chartData} prevData={prevChartData} year={year} prevYear={prevYear} />
       </div>
     </div>
   );

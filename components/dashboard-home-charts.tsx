@@ -20,7 +20,6 @@ import type { PieLabelRenderProps } from "recharts";
 import { formatCurrency } from "@/lib/format";
 import { getBrandIcon } from "@/lib/brand-icons";
 
-/* ── Colors matching mockup section headers ───────────────────── */
 const SECTION = {
   budgeting: "#22c55e",
   performance: "#d06050",
@@ -28,7 +27,10 @@ const SECTION = {
   inventory: "#7b5296",
 };
 
-const BAR_COLORS = ["#22c55e", "#eab308", "#3b82f6", "#a855f7", "#ef4444", "#06b6d4", "#f97316", "#ec4899"];
+const BAR_COLORS = [
+  "#22c55e", "#eab308", "#3b82f6", "#a855f7",
+  "#ef4444", "#06b6d4", "#f97316", "#ec4899",
+];
 
 /* ── Data shape ───────────────────────────────────────────────── */
 export type DashboardHomeData = {
@@ -56,12 +58,12 @@ export type DashboardHomeData = {
 
 /* ── Formatters ───────────────────────────────────────────────── */
 function compactNum(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n}`;
+  if (n >= 1_000_000) return "$" + (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return "$" + (n / 1_000).toFixed(0) + "K";
+  return "$" + n;
 }
 
-/* ── Section card wrapper matching mockup ─────────────────────── */
+/* ── Section card ─────────────────────────────────────────────── */
 function SectionCard({
   title,
   color,
@@ -86,6 +88,18 @@ function SectionCard({
   );
 }
 
+/* ── Year badge ───────────────────────────────────────────────── */
+function YearBadge({ year, accent }: { year: number; accent: string }) {
+  return (
+    <span
+      className="inline-block rounded-full px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider"
+      style={{ backgroundColor: accent }}
+    >
+      {year}
+    </span>
+  );
+}
+
 /* ── Horizontal progress bar ──────────────────────────────────── */
 function HorizBar({
   label,
@@ -107,7 +121,7 @@ function HorizBar({
       <div className="flex-1 h-3.5 bg-zinc-100 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          style={{ width: pct + "%", backgroundColor: color }}
         />
       </div>
       <span className="w-16 text-right font-semibold text-zinc-700 text-[10px]">
@@ -118,11 +132,24 @@ function HorizBar({
 }
 
 /* ── KPI card ─────────────────────────────────────────────────── */
-function KpiBox({ label, value, accent }: { label: string; value: string; accent?: string }) {
+function KpiBox({
+  label,
+  value,
+  prevValue,
+  accent,
+}: {
+  label: string;
+  value: string;
+  prevValue?: string;
+  accent?: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-sm min-w-0">
       <p className="text-[9px] uppercase tracking-wider text-zinc-400 whitespace-nowrap">{label}</p>
-      <p className={`text-base font-bold whitespace-nowrap ${accent ?? "text-zinc-800"}`}>{value}</p>
+      <p className={"text-base font-bold whitespace-nowrap " + (accent ?? "text-zinc-800")}>{value}</p>
+      {prevValue != null && (
+        <p className="text-[9px] text-zinc-400 whitespace-nowrap">{prevValue}</p>
+      )}
     </div>
   );
 }
@@ -137,113 +164,235 @@ const BUDGET_VIEWS = [
 
 type BudgetViewKey = (typeof BUDGET_VIEWS)[number]["key"];
 
+/* ── Side-by-side container ───────────────────────────────────── */
+function SideBySide({
+  left,
+  right,
+  year,
+  prevYear,
+  color,
+}: {
+  left: React.ReactNode;
+  right: React.ReactNode;
+  year: number;
+  prevYear: number;
+  color: string;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <div>
+        <div className="flex justify-center mb-1">
+          <YearBadge year={year} accent={color} />
+        </div>
+        {left}
+      </div>
+      <div>
+        <div className="flex justify-center mb-1">
+          <YearBadge year={prevYear} accent="#94a3b8" />
+        </div>
+        {right}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ───────────────────────────────────────────── */
-export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
+export function DashboardHomeCharts({
+  data,
+  prevData,
+  year,
+  prevYear,
+}: {
+  data: DashboardHomeData;
+  prevData: DashboardHomeData;
+  year: number;
+  prevYear: number;
+}) {
   const [budgetView, setBudgetView] = useState<BudgetViewKey>("gp");
-  const maxBrandGp = Math.max(...data.brands.slice(0, 5).map((b) => b.gp), 1);
-  const maxTierGp = Math.max(...data.inventoryTiers.map((t) => t.gp), 1);
-  const maxLeadGp = Math.max(...data.leadSources.slice(0, 5).map((l) => l.gp), 1);
-  const totalChannelGp = data.channels.reduce((s, c) => s + c.gp, 0);
+
+  const maxBrandGp = Math.max(
+    ...data.brands.slice(0, 5).map((b) => b.gp),
+    ...prevData.brands.slice(0, 5).map((b) => b.gp),
+    1,
+  );
+  const maxTierGp = Math.max(
+    ...data.inventoryTiers.map((t) => t.gp),
+    ...prevData.inventoryTiers.map((t) => t.gp),
+    1,
+  );
+  const maxLeadGp = Math.max(
+    ...data.leadSources.slice(0, 5).map((l) => l.gp),
+    ...prevData.leadSources.slice(0, 5).map((l) => l.gp),
+    1,
+  );
+  const maxTierCount = Math.max(
+    ...data.inventoryTiers.map((x) => x.count),
+    ...prevData.inventoryTiers.map((x) => x.count),
+    1,
+  );
   const gpPerUnit = data.kpis.totalUnits > 0 ? data.kpis.totalGP / data.kpis.totalUnits : 0;
+  const prevGpPerUnit = prevData.kpis.totalUnits > 0 ? prevData.kpis.totalGP / prevData.kpis.totalUnits : 0;
+
+  /* Helper: budget rows for a dataset */
+  function renderBudgetRows(d: DashboardHomeData) {
+    return d.monthlyTrend.map((m) => {
+      let value: number;
+      let prefix = "";
+      if (budgetView === "revBudget") value = m.revBudget;
+      else if (budgetView === "gp") value = m.gp;
+      else if (budgetView === "projectedGp") value = m.projectedGp;
+      else {
+        value = m.gp - m.gpBudget;
+        prefix = value >= 0 ? "+" : "";
+      }
+      const colorCls =
+        budgetView === "delta"
+          ? value >= 0
+            ? "text-green-600"
+            : "text-red-500"
+          : "text-zinc-800";
+      return (
+        <div key={m.month} className="flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-sm bg-green-500 shrink-0" />
+          <span className="text-[10px] font-bold text-zinc-600 w-7">{m.month}</span>
+          <span className={"text-[10px] font-semibold " + colorCls}>
+            {prefix}
+            {formatCurrency(value)}
+          </span>
+        </div>
+      );
+    });
+  }
+
+  /* Merged monthly trend for overlay charts */
+  const mergedTrend = data.monthlyTrend.map((m, i) => ({
+    month: m.month,
+    gp: m.gp,
+    units: m.units,
+    prevGp: prevData.monthlyTrend[i]?.gp ?? 0,
+    prevUnits: prevData.monthlyTrend[i]?.units ?? 0,
+  }));
+
+  const noData = <p className="text-[10px] text-zinc-400 italic">No data</p>;
+
+  /* Person GP chart data */
+  const personChartData = data.salesByPerson.slice(0, 5).map((p) => {
+    const prev = prevData.salesByPerson.find((pp) => pp.name === p.name);
+    return { name: p.name, gp: p.gp, prevGp: prev?.gp ?? 0 };
+  });
 
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden">
-      {/* KPI Row */}
+      {/* ── KPI Row ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-stretch gap-2 rounded-xl bg-zinc-100 px-3 py-2.5 shrink-0">
-        <KpiBox label="Revenue" value={compactNum(data.kpis.totalRevenue)} accent="text-zinc-800" />
-        <KpiBox label="Gross Profit" value={compactNum(data.kpis.totalGP)} accent="text-emerald-600" />
-        <KpiBox label="Units" value={String(data.kpis.totalUnits)} accent="text-blue-600" />
+        <KpiBox
+          label="Revenue"
+          value={compactNum(data.kpis.totalRevenue)}
+          prevValue={prevYear + ": " + compactNum(prevData.kpis.totalRevenue)}
+          accent="text-zinc-800"
+        />
+        <KpiBox
+          label="Gross Profit"
+          value={compactNum(data.kpis.totalGP)}
+          prevValue={prevYear + ": " + compactNum(prevData.kpis.totalGP)}
+          accent="text-emerald-600"
+        />
+        <KpiBox
+          label="Units"
+          value={String(data.kpis.totalUnits)}
+          prevValue={prevYear + ": " + String(prevData.kpis.totalUnits)}
+          accent="text-blue-600"
+        />
         <KpiBox
           label="Margin"
-          value={data.kpis.avgMargin != null ? `${(data.kpis.avgMargin * 100).toFixed(1)}%` : "—"}
+          value={
+            data.kpis.avgMargin != null
+              ? (data.kpis.avgMargin * 100).toFixed(1) + "%"
+              : "\u2014"
+          }
+          prevValue={
+            prevYear +
+            ": " +
+            (prevData.kpis.avgMargin != null
+              ? (prevData.kpis.avgMargin * 100).toFixed(1) + "%"
+              : "\u2014")
+          }
           accent="text-orange-600"
         />
-        <KpiBox label="GP/Unit" value={compactNum(gpPerUnit)} accent="text-violet-600" />
+        <KpiBox
+          label="GP/Unit"
+          value={compactNum(gpPerUnit)}
+          prevValue={prevYear + ": " + compactNum(prevGpPerUnit)}
+          accent="text-violet-600"
+        />
         <KpiBox
           label="Units/Day"
           value={(data.kpis.totalUnits / Math.max(1, data.monthlyTrend.length * 30)).toFixed(1)}
+          prevValue={
+            prevYear +
+            ": " +
+            (prevData.kpis.totalUnits / Math.max(1, prevData.monthlyTrend.length * 30)).toFixed(1)
+          }
           accent="text-sky-600"
         />
       </div>
 
-      {/* Section cards grid */}
+      {/* ── Section cards grid ──────────────────────────────── */}
       <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+
         {/* ── BUDGETING ─────────────────────────────────────── */}
         <SectionCard title="BUDGETING" color={SECTION.budgeting}>
-          {/* Toggle tabs */}
           <div className="flex flex-wrap gap-1">
             {BUDGET_VIEWS.map((v) => (
               <button
                 key={v.key}
                 onClick={() => setBudgetView(v.key)}
-                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                  budgetView === v.key
+                className={
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors " +
+                  (budgetView === v.key
                     ? "bg-green-500 text-white"
-                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
-                }`}
+                    : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200")
+                }
               >
                 {v.label}
               </button>
             ))}
           </div>
 
-          <div className="space-y-1.5">
-            {data.monthlyTrend.map((m) => {
-              let value: number;
-              let prefix = "";
-              if (budgetView === "revBudget") value = m.revBudget;
-              else if (budgetView === "gp") value = m.gp;
-              else if (budgetView === "projectedGp") value = m.projectedGp;
-              else {
-                value = m.gp - m.gpBudget;
-                prefix = value >= 0 ? "+" : "";
-              }
-              return (
-                <div key={m.month} className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm bg-green-500 shrink-0" />
-                  <span className="text-xs font-bold text-zinc-600 w-10">{m.month}</span>
-                  <span className={`text-xs font-semibold ${
-                    budgetView === "delta"
-                      ? value >= 0 ? "text-green-600" : "text-red-500"
-                      : "text-zinc-800"
-                  }`}>
-                    {prefix}{formatCurrency(value)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.budgeting}
+            left={<div className="space-y-1">{renderBudgetRows(data)}</div>}
+            right={<div className="space-y-1">{renderBudgetRows(prevData)}</div>}
+          />
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Sales Over Time
-          </p>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">GP Over Time</p>
           <div className="h-32">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthlyTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
+              <BarChart data={mergedTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 8 }} />
                 <YAxis tickFormatter={compactNum} tick={{ fontSize: 8 }} width={40} />
-                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                <Bar dataKey="gp" name="GP" radius={[3, 3, 0, 0]}>
-                  {data.monthlyTrend.map((_, i) => (
-                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                  ))}
-                </Bar>
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                <Bar dataKey="gp" name={String(year)} fill="#22c55e" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevGp" name={String(prevYear)} fill="#94a3b8" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Units Over Time
-          </p>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">Units Over Time</p>
           <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.monthlyTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
+              <LineChart data={mergedTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 8 }} />
                 <YAxis tick={{ fontSize: 8 }} width={30} />
                 <Tooltip />
-                <Line type="monotone" dataKey="units" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                <Legend wrapperStyle={{ fontSize: 9 }} />
+                <Line type="monotone" dataKey="units" name={String(year)} stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="prevUnits" name={String(prevYear)} stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -251,62 +400,96 @@ export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
 
         {/* ── PERFORMANCE ───────────────────────────────────── */}
         <SectionCard title="PERFORMANCE" color={SECTION.performance}>
-          <div className="space-y-1.5">
-            {data.salesByPerson.slice(0, 4).map((p) => (
-              <div key={p.name} className="flex justify-between text-xs">
-                <span className="font-medium text-zinc-700 truncate">{p.name}</span>
-                <span className="font-bold text-zinc-800 shrink-0 ml-2">
-                  {formatCurrency(p.gp)}
-                </span>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.performance}
+            left={
+              <div className="space-y-1">
+                {data.salesByPerson.slice(0, 4).map((p) => (
+                  <div key={p.name} className="flex justify-between text-[10px]">
+                    <span className="font-medium text-zinc-700 truncate">{p.name}</span>
+                    <span className="font-bold text-zinc-800 shrink-0 ml-1">{compactNum(p.gp)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            }
+            right={
+              <div className="space-y-1">
+                {prevData.salesByPerson.slice(0, 4).map((p) => (
+                  <div key={p.name} className="flex justify-between text-[10px]">
+                    <span className="font-medium text-zinc-700 truncate">{p.name}</span>
+                    <span className="font-bold text-zinc-800 shrink-0 ml-1">{compactNum(p.gp)}</span>
+                  </div>
+                ))}
+                {prevData.salesByPerson.length === 0 && noData}
+              </div>
+            }
+          />
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Sales Over Time
-          </p>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">Sales Over Time</p>
           <div className="h-28">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthlyTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
+              <BarChart data={mergedTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 8 }} />
                 <YAxis tickFormatter={compactNum} tick={{ fontSize: 8 }} width={40} />
-                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
-                <Bar dataKey="gp" fill="#111827" name="GP" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="gp" name={String(year)} fill="#111827" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="prevGp" name={String(prevYear)} fill="#94a3b8" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Channel Performance
-          </p>
-          <div className="space-y-1">
-            {data.leadSources.slice(0, 4).map((l, i) => (
-              <HorizBar
-                key={l.name}
-                label={l.name.slice(0, 10)}
-                value={l.gp}
-                max={maxLeadGp}
-                color={BAR_COLORS[i % BAR_COLORS.length]}
-              />
-            ))}
-          </div>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">Channel Performance</p>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.performance}
+            left={
+              <div className="space-y-1">
+                {data.leadSources.slice(0, 4).map((l, i) => (
+                  <HorizBar
+                    key={l.name}
+                    label={l.name.slice(0, 10)}
+                    value={l.gp}
+                    max={maxLeadGp}
+                    color={BAR_COLORS[i % BAR_COLORS.length]}
+                  />
+                ))}
+              </div>
+            }
+            right={
+              <div className="space-y-1">
+                {prevData.leadSources.slice(0, 4).map((l, i) => (
+                  <HorizBar
+                    key={l.name}
+                    label={l.name.slice(0, 10)}
+                    value={l.gp}
+                    max={maxLeadGp}
+                    color={BAR_COLORS[i % BAR_COLORS.length]}
+                  />
+                ))}
+                {prevData.leadSources.length === 0 && noData}
+              </div>
+            }
+          />
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Sales by Day
-          </p>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">GP by Person</p>
           <div className="h-20">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.salesByPerson.slice(0, 5)} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
+              <BarChart data={personChartData} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 7 }} interval={0} />
                 <YAxis hide />
-                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                <Bar dataKey="gp" radius={[3, 3, 0, 0]}>
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: 8 }} />
+                <Bar dataKey="gp" name={String(year)} radius={[3, 3, 0, 0]}>
                   {data.salesByPerson.slice(0, 5).map((_, i) => (
                     <Cell key={i} fill={["#3b82f6", "#06b6d4", "#22c55e", "#f97316", "#ef4444"][i]} />
                   ))}
                 </Bar>
+                <Bar dataKey="prevGp" name={String(prevYear)} fill="#94a3b8" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -314,58 +497,115 @@ export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
 
         {/* ── CHANNELS ──────────────────────────────────────── */}
         <SectionCard title="CHANNELS" color={SECTION.channels}>
-          <div className="space-y-2">
-            {data.channels.map((c) => (
-              <div key={c.name} className="flex justify-between text-xs">
-                <span className="font-medium text-zinc-700">{c.name}</span>
-                <span className="font-bold text-zinc-800">{formatCurrency(c.gp)}</span>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.channels}
+            left={
+              <div className="space-y-2">
+                {data.channels.map((c) => (
+                  <div key={c.name} className="flex justify-between text-[10px]">
+                    <span className="font-medium text-zinc-700">{c.name}</span>
+                    <span className="font-bold text-zinc-800">{compactNum(c.gp)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            }
+            right={
+              <div className="space-y-2">
+                {prevData.channels.map((c) => (
+                  <div key={c.name} className="flex justify-between text-[10px]">
+                    <span className="font-medium text-zinc-700">{c.name}</span>
+                    <span className="font-bold text-zinc-800">{compactNum(c.gp)}</span>
+                  </div>
+                ))}
+                {prevData.channels.length === 0 && noData}
+              </div>
+            }
+          />
+
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">Sales by Channel</p>
+          <div className="grid grid-cols-2 gap-1">
+            <div>
+              <div className="flex justify-center mb-1">
+                <YearBadge year={year} accent={SECTION.channels} />
+              </div>
+              <div className="h-32">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.channels}
+                      dataKey="gp"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="35%"
+                      outerRadius="65%"
+                      label={(props: PieLabelRenderProps) => {
+                        const pct = (Number(props.percent ?? 0) * 100).toFixed(0);
+                        return String(props.name ?? "").slice(0, 8) + " " + pct + "%";
+                      }}
+                      labelLine={false}
+                      fontSize={8}
+                    >
+                      {data.channels.map((_, i) => (
+                        <Cell key={i} fill={["#4a80b5", "#22c55e", "#f97316", "#a855f7"][i % 4]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-center mb-1">
+                <YearBadge year={prevYear} accent="#94a3b8" />
+              </div>
+              <div className="h-32">
+                {prevData.channels.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={prevData.channels}
+                        dataKey="gp"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="35%"
+                        outerRadius="65%"
+                        label={(props: PieLabelRenderProps) => {
+                          const pct = (Number(props.percent ?? 0) * 100).toFixed(0);
+                          return String(props.name ?? "").slice(0, 8) + " " + pct + "%";
+                        }}
+                        labelLine={false}
+                        fontSize={8}
+                      >
+                        {prevData.channels.map((_, i) => (
+                          <Cell key={i} fill={["#4a80b5", "#22c55e", "#f97316", "#a855f7"][i % 4]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-[10px] text-zinc-400 italic">
+                    No data
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Sales by Channel
-          </p>
-          <div className="h-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.channels}
-                  dataKey="gp"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="40%"
-                  outerRadius="70%"
-                  label={(props: PieLabelRenderProps) => {
-                    const pct = ((Number(props.percent ?? 0)) * 100).toFixed(0);
-                    return `${String(props.name ?? "").slice(0, 10)} ${pct}%`;
-                  }}
-                  labelLine={false}
-                  fontSize={9}
-                >
-                  {data.channels.map((_, i) => (
-                    <Cell key={i} fill={["#4a80b5", "#22c55e", "#f97316", "#a855f7"][i % 4]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">
-            Sales by Day
-          </p>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-1">Monthly GP</p>
           <div className="h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data.monthlyTrend.slice(-7)}
-                margin={{ left: 0, right: 4, top: 4, bottom: 4 }}
-              >
+              <BarChart data={mergedTrend} margin={{ left: 0, right: 4, top: 4, bottom: 4 }}>
                 <XAxis dataKey="month" tick={{ fontSize: 8 }} />
                 <YAxis hide />
-                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
-                <Bar dataKey="gp" fill="#4a80b5" radius={[3, 3, 0, 0]} />
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: 8 }} />
+                <Bar dataKey="gp" name={String(year)} fill="#4a80b5" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevGp" name={String(prevYear)} fill="#94a3b8" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -373,51 +613,109 @@ export function DashboardHomeCharts({ data }: { data: DashboardHomeData }) {
 
         {/* ── INVENTORY ─────────────────────────────────────── */}
         <SectionCard title="INVENTORY" color={SECTION.inventory}>
-          <p className="text-[10px] font-bold uppercase text-zinc-400">
-            Price Tiers
-          </p>
-          <div className="space-y-1">
-            {data.inventoryTiers.slice(0, 5).map((t, i) => (
-              <HorizBar
-                key={t.tier}
-                label={t.tier}
-                value={t.gp}
-                max={maxTierGp}
-                color={["#3b82f6", "#06b6d4", "#22c55e", "#f97316", "#a855f7"][i % 5]}
-              />
-            ))}
-          </div>
+          <p className="text-[10px] font-bold uppercase text-zinc-400">Price Tiers</p>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.inventory}
+            left={
+              <div className="space-y-1">
+                {data.inventoryTiers.slice(0, 5).map((t, i) => (
+                  <HorizBar
+                    key={t.tier}
+                    label={t.tier}
+                    value={t.gp}
+                    max={maxTierGp}
+                    color={["#3b82f6", "#06b6d4", "#22c55e", "#f97316", "#a855f7"][i % 5]}
+                  />
+                ))}
+              </div>
+            }
+            right={
+              <div className="space-y-1">
+                {prevData.inventoryTiers.slice(0, 5).map((t, i) => (
+                  <HorizBar
+                    key={t.tier}
+                    label={t.tier}
+                    value={t.gp}
+                    max={maxTierGp}
+                    color={["#3b82f6", "#06b6d4", "#22c55e", "#f97316", "#a855f7"][i % 5]}
+                  />
+                ))}
+                {prevData.inventoryTiers.length === 0 && noData}
+              </div>
+            }
+          />
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-2">
-            Top Brands
-          </p>
-          <div className="space-y-1">
-            {data.brands.slice(0, 5).map((b, i) => (
-              <HorizBar
-                key={b.name}
-                label={`${getBrandIcon(b.name)} ${b.name.slice(0, 8)}`}
-                value={b.gp}
-                max={maxBrandGp}
-                color={["#6d8f4e", "#8b6f3e", "#c25245", "#5a7eb5", "#8a5a9e"][i % 5]}
-              />
-            ))}
-          </div>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-2">Top Brands</p>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.inventory}
+            left={
+              <div className="space-y-1">
+                {data.brands.slice(0, 5).map((b, i) => (
+                  <HorizBar
+                    key={b.name}
+                    label={getBrandIcon(b.name) + " " + b.name.slice(0, 8)}
+                    value={b.gp}
+                    max={maxBrandGp}
+                    color={["#6d8f4e", "#8b6f3e", "#c25245", "#5a7eb5", "#8a5a9e"][i % 5]}
+                  />
+                ))}
+              </div>
+            }
+            right={
+              <div className="space-y-1">
+                {prevData.brands.slice(0, 5).map((b, i) => (
+                  <HorizBar
+                    key={b.name}
+                    label={getBrandIcon(b.name) + " " + b.name.slice(0, 8)}
+                    value={b.gp}
+                    max={maxBrandGp}
+                    color={["#6d8f4e", "#8b6f3e", "#c25245", "#5a7eb5", "#8a5a9e"][i % 5]}
+                  />
+                ))}
+                {prevData.brands.length === 0 && noData}
+              </div>
+            }
+          />
 
-          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-2">
-            Inventory
-          </p>
-          <div className="space-y-1">
-            {data.inventoryTiers.slice(0, 4).map((t, i) => (
-              <HorizBar
-                key={`inv-${t.tier}`}
-                label={t.tier}
-                value={t.count}
-                max={Math.max(...data.inventoryTiers.map((x) => x.count), 1)}
-                color={["#22c55e", "#3b82f6", "#f97316", "#ef4444"][i % 4]}
-                suffix={formatCurrency(t.gp)}
-              />
-            ))}
-          </div>
+          <p className="text-[10px] font-bold uppercase text-zinc-400 pt-2">Inventory</p>
+          <SideBySide
+            year={year}
+            prevYear={prevYear}
+            color={SECTION.inventory}
+            left={
+              <div className="space-y-1">
+                {data.inventoryTiers.slice(0, 4).map((t, i) => (
+                  <HorizBar
+                    key={"inv-" + t.tier}
+                    label={t.tier}
+                    value={t.count}
+                    max={maxTierCount}
+                    color={["#22c55e", "#3b82f6", "#f97316", "#ef4444"][i % 4]}
+                    suffix={formatCurrency(t.gp)}
+                  />
+                ))}
+              </div>
+            }
+            right={
+              <div className="space-y-1">
+                {prevData.inventoryTiers.slice(0, 4).map((t, i) => (
+                  <HorizBar
+                    key={"inv-" + t.tier}
+                    label={t.tier}
+                    value={t.count}
+                    max={maxTierCount}
+                    color={["#22c55e", "#3b82f6", "#f97316", "#ef4444"][i % 4]}
+                    suffix={formatCurrency(t.gp)}
+                  />
+                ))}
+                {prevData.inventoryTiers.length === 0 && noData}
+              </div>
+            }
+          />
         </SectionCard>
       </div>
     </div>
