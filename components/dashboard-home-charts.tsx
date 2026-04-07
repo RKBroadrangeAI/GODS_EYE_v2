@@ -39,6 +39,9 @@ export type DashboardHomeData = {
     totalUnits: number;
     totalRevenue: number;
     avgMargin: number | null;
+    avgPrice: number;
+    avgAging: number | null;
+    totalBudgetGP: number;
   };
   salesByPerson: { name: string; gp: number; units: number }[];
   leadSources: { name: string; gp: number; count: number }[];
@@ -324,6 +327,30 @@ export function DashboardHomeCharts({
           value={compactNum(gpPerUnit)}
           prevValue={prevYear + ": " + compactNum(prevGpPerUnit)}
           accent="text-violet-600"
+        />
+        <KpiBox
+          label="Avg Price"
+          value={compactNum(data.kpis.avgPrice)}
+          prevValue={prevYear + ": " + compactNum(prevData.kpis.avgPrice)}
+          accent="text-teal-600"
+        />
+        <KpiBox
+          label="Avg Aging"
+          value={data.kpis.avgAging != null ? Math.round(data.kpis.avgAging) + "d" : "\u2014"}
+          prevValue={prevYear + ": " + (prevData.kpis.avgAging != null ? Math.round(prevData.kpis.avgAging) + "d" : "\u2014")}
+          accent="text-amber-600"
+        />
+        <KpiBox
+          label="GP Budget"
+          value={compactNum(data.kpis.totalBudgetGP)}
+          prevValue={prevYear + ": " + compactNum(prevData.kpis.totalBudgetGP)}
+          accent="text-green-700"
+        />
+        <KpiBox
+          label="Budget Var"
+          value={(data.kpis.totalGP - data.kpis.totalBudgetGP >= 0 ? "+" : "") + compactNum(data.kpis.totalGP - data.kpis.totalBudgetGP)}
+          prevValue={prevYear + ": " + ((prevData.kpis.totalGP - prevData.kpis.totalBudgetGP >= 0 ? "+" : "") + compactNum(prevData.kpis.totalGP - prevData.kpis.totalBudgetGP))}
+          accent={data.kpis.totalGP - data.kpis.totalBudgetGP >= 0 ? "text-green-600" : "text-red-500"}
         />
         <KpiBox
           label="Units/Day"
