@@ -45,7 +45,59 @@ const DETAIL_COLUMNS: { key: DetailColumnKey; label: string; defaultOn: boolean 
 ];
 
 type SortDir = "asc" | "desc";
-type SortConfig = { key: DetailColumnKey; dir: SortDir } | null;
+
+type SortableKey = "name" | "gp" | "units" | "margin" | "brand" | "reference" | "stock_number" | "sold_for" | "profit" | "date";
+
+const NODE_SORT_OPTIONS: { key: SortableKey; label: string }[] = [
+  { key: "name", label: "Name" },
+  { key: "gp", label: "Gross Profit" },
+  { key: "units", label: "Units" },
+  { key: "margin", label: "Margin" },
+];
+
+const DETAIL_SORT_OPTIONS: { key: SortableKey; label: string }[] = [
+  { key: "brand", label: "Brand" },
+  { key: "reference", label: "Reference" },
+  { key: "stock_number", label: "Stock #" },
+  { key: "sold_for", label: "Sold For" },
+  { key: "profit", label: "Profit" },
+  { key: "date", label: "Date" },
+];
+
+type SortConfig = { key: SortableKey; dir: SortDir } | null;
+
+const isNodeSortKey = (key: SortableKey) => ["name", "gp", "units", "margin"].includes(key);
+
+function sortNodes(nodes: GraphNode[], config: SortConfig): GraphNode[] {
+  if (!config || !isNodeSortKey(config.key)) return nodes;
+  return [...nodes].sort((a, b) => {
+    let av: string | number, bv: string | number;
+    if (config.key === "name") { av = a.name.toLowerCase(); bv = b.name.toLowerCase(); }
+    else if (config.key === "gp") { av = a.gp; bv = b.gp; }
+    else if (config.key === "units") { av = a.units; bv = b.units; }
+    else { av = a.margin; bv = b.margin; }
+    if (av < bv) return config.dir === "asc" ? -1 : 1;
+    if (av > bv) return config.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+}
+
+function sortDetails(details: SaleDetail[], config: SortConfig): SaleDetail[] {
+  if (!config || isNodeSortKey(config.key)) return details;
+  return [...details].sort((a, b) => {
+    const { key, dir } = config;
+    let av: string | number, bv: string | number;
+    if (key === "sold_for") { av = a.sold_for; bv = b.sold_for; }
+    else if (key === "profit") { av = a.profit; bv = b.profit; }
+    else if (key === "date") { av = a.date_out; bv = b.date_out; }
+    else if (key === "brand") { av = (a.brand ?? "").toLowerCase(); bv = (b.brand ?? "").toLowerCase(); }
+    else if (key === "reference") { av = (a.reference ?? "").toLowerCase(); bv = (b.reference ?? "").toLowerCase(); }
+    else { av = (a.stock_number ?? "").toLowerCase(); bv = (b.stock_number ?? "").toLowerCase(); }
+    if (av < bv) return dir === "asc" ? -1 : 1;
+    if (av > bv) return dir === "asc" ? 1 : -1;
+    return 0;
+  });
+}
 
 /* ── Types ─────────────────────────────────────────── */
 
@@ -215,11 +267,11 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [showColPicker, showSortPicker]);
 
-  const cycleSortCol = (key: DetailColumnKey) => {
+  const cycleSortCol = (key: SortableKey) => {
     setSortConfig((prev) => {
       if (!prev || prev.key !== key) return { key, dir: "asc" };
       if (prev.dir === "asc") return { key, dir: "desc" };
-      return null; // third click clears
+      return null;
     });
   };
 
@@ -657,14 +709,36 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                 Sort
                 {sortConfig && (
                   <span className="ml-0.5 rounded-full bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-[10px] font-bold leading-none">
-                    {DETAIL_COLUMNS.find((c) => c.key === sortConfig.key)?.label} {sortConfig.dir === "asc" ? "↑" : "↓"}
+                    {[...NODE_SORT_OPTIONS, ...DETAIL_SORT_OPTIONS].find((c) => c.key === sortConfig.key)?.label} {sortConfig.dir === "asc" ? "↑" : "↓"}
                   </span>
                 )}
               </button>
               {showSortPicker && (
                 <div className="absolute right-0 top-full mt-1 z-50 w-52 rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Sort by</p>
-                  {DETAIL_COLUMNS.map((col) => {
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Nodes</p>
+                  {NODE_SORT_OPTIONS.map((col) => {
+                    const isActive = sortConfig?.key === col.key;
+                    return (
+                      <button
+                        key={col.key}
+                        onClick={() => { cycleSortCol(col.key); }}
+                        className={`flex w-full items-center justify-between gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                          isActive ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-zinc-700 hover:bg-zinc-50"
+                        }`}
+                      >
+                        <span>{col.label}</span>
+                        {isActive && (
+                          sortConfig!.dir === "asc"
+                            ? <ArrowUp className="h-3.5 w-3.5" />
+                            : <ArrowDown className="h-3.5 w-3.5" />
+                        )}
+                        {!isActive && <ArrowUpDown className="h-3 w-3 text-zinc-300" />}
+                      </button>
+                    );
+                  })}
+                  <div className="my-1 border-t border-zinc-100" />
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Details</p>
+                  {DETAIL_SORT_OPTIONS.map((col) => {
                     const isActive = sortConfig?.key === col.key;
                     return (
                       <button
@@ -844,7 +918,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             </div>
             {/* Tree nodes */}
             <div className="ml-8 pl-4">
-              {rootNodes.map((node, i) => (
+              {sortNodes(rootNodes, sortConfig).map((node, i) => (
                 <TreeNode
                   key={node.id}
                   node={node}
@@ -948,7 +1022,7 @@ function TreeNode({
       {/* Children */}
       {node.expanded && node.children.length > 0 && (
         <div className="ml-12 mt-1 pl-4">
-          {node.children.map((child, i) => (
+          {sortNodes(node.children, sortConfig).map((child, i) => (
             <TreeNode
               key={child.id}
               node={child}
@@ -966,21 +1040,7 @@ function TreeNode({
       {node.expanded && node.children.length === 0 && !node.loading && (
         <div className="ml-16 pl-4 py-2 relative z-20">
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (() => {
-            const sorted = sortConfig
-              ? [...node.saleDetails].sort((a, b) => {
-                  const { key, dir } = sortConfig;
-                  let av: string | number, bv: string | number;
-                  if (key === "sold_for") { av = a.sold_for; bv = b.sold_for; }
-                  else if (key === "profit") { av = a.profit; bv = b.profit; }
-                  else if (key === "date") { av = a.date_out; bv = b.date_out; }
-                  else if (key === "brand") { av = (a.brand ?? "").toLowerCase(); bv = (b.brand ?? "").toLowerCase(); }
-                  else if (key === "reference") { av = (a.reference ?? "").toLowerCase(); bv = (b.reference ?? "").toLowerCase(); }
-                  else { av = (a.stock_number ?? "").toLowerCase(); bv = (b.stock_number ?? "").toLowerCase(); }
-                  if (av < bv) return dir === "asc" ? -1 : 1;
-                  if (av > bv) return dir === "asc" ? 1 : -1;
-                  return 0;
-                })
-              : node.saleDetails;
+            const sorted = sortDetails(node.saleDetails, sortConfig);
             return (
             <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white/80 shadow-sm backdrop-blur-sm">
               <table className="w-full text-xs">
