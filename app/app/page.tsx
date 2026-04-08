@@ -96,7 +96,9 @@ function buildYearData(
       avgMargin: metrics.margin,
       avgPrice: metrics.averagePrice ?? 0,
       avgAging: metrics.averageAging,
-      totalBudgetGP: Array.from(budgetByMonth.values()).reduce((s, b) => s + b.gpBudget, 0),
+      totalBudgetGP: Array.from(budgetByMonth.entries())
+        .filter(([m]) => m <= maxMonth)
+        .reduce((s, [, b]) => s + b.gpBudget, 0),
     },
     salesByPerson,
     leadSources,
