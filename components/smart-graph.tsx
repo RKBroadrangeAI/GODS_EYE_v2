@@ -20,14 +20,16 @@ import {
   ChevronRight,
   Network,
   RotateCcw,
+  TrendingUp,
 } from "lucide-react";
+import Image from "next/image";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { BrandIcon } from "@/components/brand-icon";
 import { UserAvatar } from "@/components/user-avatar";
 
 /* ── Types ─────────────────────────────────────────── */
 
-type DimensionKey = "person" | "brand" | "lead_source" | "condition" | "channel";
+type DimensionKey = "person" | "brand" | "lead_source" | "condition" | "channel" | "inventory_tier" | "month";
 
 type DimensionDef = {
   key: DimensionKey;
@@ -109,6 +111,24 @@ const ALL_DIMENSIONS: DimensionDef[] = [
     bgColor: "bg-sky-50",
     borderColor: "border-sky-300",
     dotColor: "bg-sky-500",
+  },
+  {
+    key: "inventory_tier",
+    label: "Inventory",
+    icon: <Layers className="h-4 w-4" />,
+    color: "text-rose-700",
+    bgColor: "bg-rose-50",
+    borderColor: "border-rose-300",
+    dotColor: "bg-rose-500",
+  },
+  {
+    key: "month",
+    label: "Performance",
+    icon: <TrendingUp className="h-4 w-4" />,
+    color: "text-indigo-700",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-300",
+    dotColor: "bg-indigo-500",
   },
 ];
 
@@ -591,17 +611,29 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
           </div>
         ) : (
           <div className="relative z-[1]">
-            {/* Root label */}
+            {/* Root label — WYW (Atlanta) */}
             <div className="mb-6 flex items-center gap-3" data-parent-path="root">
               <div
-                className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center shadow-md"
+                className="h-12 w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden"
                 data-node-path="root"
               >
-                <Network className="h-5 w-5 text-white" />
+                <Image
+                  src="/copy_logo.png"
+                  alt="WYW"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
-              <span className="text-base font-bold text-zinc-700">
-                All Sales ({year})
-              </span>
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-zinc-800">
+                  WYW (Atlanta)
+                </span>
+                <span className="text-xs text-zinc-400">
+                  {year} · Smart Graph
+                </span>
+              </div>
             </div>
             {/* Tree nodes */}
             <div className="ml-8 pl-4">

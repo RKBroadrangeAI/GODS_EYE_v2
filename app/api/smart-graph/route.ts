@@ -1,22 +1,27 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { pool } from "@/lib/db";
+import { inventoryTierRanges } from "@/lib/constants";
 
 /**
  * Smart-Graph drill-down API.
  *
  * Query params:
  *   year         – e.g. 2026
- *   dimensions   – comma-separated ordered list: person,brand,lead_source,condition,channel
- *   filters      – JSON object  { person?: id, brand?: id, ... } already-selected nodes
+ *   dimensions   – comma-separated ordered list
+ *   filters      – JSON object of already-selected nodes
  *
- * Returns: { nodes: { id, name, gp, revenue, units, margin }[] }
- *   These are the children at the next un-drilled dimension.
+ * Supported dimensions:
+ *   person, brand, lead_source, condition, channel  (lookup-table joins)
+ *   inventory_tier  (computed price brackets from sold_for)
+ *   month           (performance by calendar month)
  */
 
-const DIMENSION_CONFIG: Record<
+/* ── Standard lookup-table dimensions ─────────────── */
+
+const LOOKUP_DIMENSIONS: Record<
   string,
-  { column: string; table: string; labelColumn?: string }
+  { column: string; table: string }
 > = {
   person: { column: "sales_person_id", table: "employees" },
   brand: { column: "brand_id", table: "brands" },
@@ -25,7 +30,20 @@ const DIMENSION_CONFIG: Record<
   channel: { column: "in_person_option_id", table: "in_person_options" },
 };
 
-const VALID_DIMENSIONS = Object.keys(DIMENSION_CONFIG);
+const COMPUTED_DIMENSIONS = ["inventory_tier", "month"] as const;
+const VALID_DIMENSIONS = [...Object.keys(LOOKUP_DIMENSIONS), ...COMPUTED_DIMENSIONS];
+
+/* ── Tier label helpers ───────────────────────────── */
+
+function tierLabel(low: number, high: number) {
+  if (high >= 999999) return "$200K+";
+  return `$${(low / 1000).toFixed(0)}K–$${(high / 1000).toFixed(0)}K`;
+}
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -36,13 +54,11 @@ export async function GET(request: Request) {
   const dimensionsRaw = searchParams.get("dimensions") ?? "";
   const filtersRaw = searchParams.get("filters") ?? "{}";
 
-  // Validate dimensions
   const dimensions = dimensionsRaw.split(",").filter((d) => VALID_DIMENSIONS.includes(d));
   if (dimensions.length === 0) {
     return NextResponse.json({ error: "No valid dimensions" }, { status: 400 });
   }
 
-  // Parse filters safely
   let filters: Record<string, string> = {};
   try {
     filters = JSON.parse(filtersRaw);
@@ -50,8 +66,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid filters JSON" }, { status: 400 });
   }
 
-  // Determine which dimension to aggregate next
-  // Walk the ordered dimensions; the first one not yet in filters is the drill target
+  // Find next un-drilled dimension
   let targetDim: string | null = null;
   for (const dim of dimensions) {
     if (!filters[dim]) {
@@ -61,15 +76,13 @@ export async function GET(request: Request) {
   }
 
   if (!targetDim) {
-    // All dimensions drilled down — return individual sales
     return NextResponse.json({ nodes: [], fullyDrilled: true });
   }
 
-  const config = DIMENSION_CONFIG[targetDim];
+  // Build base WHERE + params
   const params: (string | number)[] = [`${year}-01-01`, `${year}-12-31`];
   let paramIdx = 3;
 
-  // Build WHERE clause from existing filters
   const whereParts = [
     `s.date_out >= $1`,
     `s.date_out <= $2`,
@@ -78,16 +91,115 @@ export async function GET(request: Request) {
 
   for (const [dim, value] of Object.entries(filters)) {
     if (!VALID_DIMENSIONS.includes(dim)) continue;
-    const col = DIMENSION_CONFIG[dim].column;
-    whereParts.push(`s.${col} = $${paramIdx}`);
-    params.push(value);
-    paramIdx++;
+
+    if (dim === "inventory_tier") {
+      // value is "low-high"
+      const [lo, hi] = value.split("-").map(Number);
+      if (!isNaN(lo) && !isNaN(hi)) {
+        whereParts.push(`s.sold_for >= $${paramIdx}`);
+        params.push(lo);
+        paramIdx++;
+        whereParts.push(`s.sold_for <= $${paramIdx}`);
+        params.push(hi);
+        paramIdx++;
+      }
+    } else if (dim === "month") {
+      whereParts.push(`EXTRACT(MONTH FROM s.date_out)::int = $${paramIdx}`);
+      params.push(Number(value));
+      paramIdx++;
+    } else if (LOOKUP_DIMENSIONS[dim]) {
+      const col = LOOKUP_DIMENSIONS[dim].column;
+      whereParts.push(`s.${col} = $${paramIdx}`);
+      params.push(value);
+      paramIdx++;
+    }
   }
 
   const whereClause = whereParts.join(" AND ");
 
-  // Aggregate at target dimension level
-  // For employees, also grab avatar_url
+  /* ── Computed dimension: inventory_tier ──────────── */
+  if (targetDim === "inventory_tier") {
+    // Build CASE expression for tier buckets
+    const caseLines = inventoryTierRanges.map(
+      ([lo, hi]) => `WHEN s.sold_for >= ${lo} AND s.sold_for <= ${hi} THEN '${lo}-${hi}'`,
+    );
+    const sql = `
+      SELECT
+        CASE ${caseLines.join(" ")} ELSE 'other' END AS tier_id,
+        COALESCE(SUM(s.profit), 0)::float AS gp,
+        COALESCE(SUM(s.sold_for), 0)::float AS revenue,
+        COUNT(CASE WHEN s.profit > 0 THEN 1 END)::int AS units,
+        CASE WHEN SUM(s.sold_for) > 0
+             THEN (SUM(s.profit) / SUM(s.sold_for))::float ELSE 0 END AS margin
+      FROM sales s
+      WHERE ${whereClause}
+      GROUP BY tier_id
+      ORDER BY MIN(s.sold_for)
+    `;
+    const { rows } = await pool.query<{
+      tier_id: string;
+      gp: number;
+      revenue: number;
+      units: number;
+      margin: number;
+    }>(sql, params);
+
+    const nodes = rows
+      .filter((r) => r.units > 0 && r.tier_id !== "other")
+      .map((r) => {
+        const [lo, hi] = r.tier_id.split("-").map(Number);
+        return {
+          id: r.tier_id,
+          name: tierLabel(lo, hi),
+          gp: r.gp,
+          revenue: r.revenue,
+          units: r.units,
+          margin: r.margin,
+        };
+      });
+
+    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false });
+  }
+
+  /* ── Computed dimension: month ───────────────────── */
+  if (targetDim === "month") {
+    const sql = `
+      SELECT
+        EXTRACT(MONTH FROM s.date_out)::int AS month_num,
+        COALESCE(SUM(s.profit), 0)::float AS gp,
+        COALESCE(SUM(s.sold_for), 0)::float AS revenue,
+        COUNT(CASE WHEN s.profit > 0 THEN 1 END)::int AS units,
+        CASE WHEN SUM(s.sold_for) > 0
+             THEN (SUM(s.profit) / SUM(s.sold_for))::float ELSE 0 END AS margin
+      FROM sales s
+      WHERE ${whereClause}
+      GROUP BY month_num
+      ORDER BY month_num
+    `;
+    const { rows } = await pool.query<{
+      month_num: number;
+      gp: number;
+      revenue: number;
+      units: number;
+      margin: number;
+    }>(sql, params);
+
+    const nodes = rows
+      .filter((r) => r.units > 0)
+      .map((r) => ({
+        id: String(r.month_num),
+        name: MONTH_NAMES[r.month_num - 1] ?? `Month ${r.month_num}`,
+        gp: r.gp,
+        revenue: r.revenue,
+        units: r.units,
+        margin: r.margin,
+      }));
+
+    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false });
+  }
+
+  /* ── Standard lookup-table dimension ────────────── */
+  const config = LOOKUP_DIMENSIONS[targetDim];
   const extraSelect = targetDim === "person" ? `, t.avatar_url` : "";
   const extraGroup = targetDim === "person" ? `, t.avatar_url` : "";
 
