@@ -642,9 +642,9 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         ) : (
           <div className="relative">
             {/* Root label — WYW (Atlanta) */}
-            <div className="mb-6 flex items-center gap-3 relative z-20" data-parent-path="root">
+            <div className="mb-6 flex items-center gap-3 relative z-20 bg-white rounded-xl px-4 py-2 w-fit shadow-sm" data-parent-path="root">
               <div
-                className="h-12 w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden"
+                className="h-12 w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden shrink-0"
                 data-node-path="root"
               >
                 <Image
@@ -711,8 +711,8 @@ function TreeNode({
     <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50/60 hover:shadow-sm ${
-          node.expanded ? "bg-zinc-50/60 shadow-sm" : ""
+        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-white hover:shadow-sm ${
+          node.expanded ? "bg-white shadow-sm" : ""
         }`}
       >
         {/* Expand/collapse icon */}
@@ -779,7 +779,7 @@ function TreeNode({
       )}
 
       {node.expanded && node.children.length === 0 && !node.loading && (
-        <div className="ml-14 py-2">
+        <div className="ml-16 pl-4 py-2 relative z-20">
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (
             <div className="rounded-lg border border-zinc-200 overflow-hidden">
               <table className="w-full text-xs">
