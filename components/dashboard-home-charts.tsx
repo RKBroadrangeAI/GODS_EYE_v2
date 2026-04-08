@@ -22,7 +22,7 @@ import { getBrandIcon } from "@/lib/brand-icons";
 
 const SECTION = {
   budgeting: "#22c55e",
-  performance: "#d06050",
+  performance: "#f59e0b",
   channels: "#38bdf8",
   inventory: "#7b5296",
 };
