@@ -237,7 +237,7 @@ export function GodsHand() {
     <div className="flex flex-col h-full gap-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg bg-black flex items-center justify-center">
+        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center">
           <Image
             src="/image.png"
             alt="God's Hand"
