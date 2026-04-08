@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import {
-  connectWhatsApp,
-  disconnectWhatsApp,
-  getWAState,
-  sendWhatsAppMessage,
-  sendWhatsAppGroupMessage,
-  broadcastWhatsApp,
-  refreshGroups,
-} from "@/lib/whatsapp";
-import { sendEmail } from "@/lib/email";
-import QRCode from "qrcode";
 
 const ALLOWED_ROLES = ["admin", "test_user"];
+
+/* Lazy-load heavy modules to avoid Turbopack tracing Baileys at build time */
+async function getWhatsApp() {
+  return import("@/lib/whatsapp");
+}
+async function getQRCode() {
+  const mod = await import("qrcode");
+  return mod.default ?? mod;
+}
+async function getEmailModule() {
+  return import("@/lib/email");
+}
 
 async function requireAdmin() {
   const session = await getSession();
@@ -31,10 +32,13 @@ export async function GET(request: Request) {
   const action = searchParams.get("action");
 
   if (action === "status") {
+    const { getWAState } = await getWhatsApp();
     return NextResponse.json(getWAState());
   }
 
   if (action === "qr") {
+    const { getWAState } = await getWhatsApp();
+    const QRCode = await getQRCode();
     const state = getWAState();
     if (!state.qr) return NextResponse.json({ qr: null, status: state.status });
     const qrDataUrl = await QRCode.toDataURL(state.qr);
@@ -42,6 +46,7 @@ export async function GET(request: Request) {
   }
 
   if (action === "groups") {
+    const { getWAState } = await getWhatsApp();
     const state = getWAState();
     return NextResponse.json({ groups: state.groups, status: state.status });
   }
@@ -60,6 +65,8 @@ export async function POST(request: Request) {
   try {
     /* ── WhatsApp connect ── */
     if (action === "connect") {
+      const { connectWhatsApp, getWAState } = await getWhatsApp();
+      const QRCode = await getQRCode();
       await connectWhatsApp();
       const state = getWAState();
       let qrDataUrl = null;
@@ -71,12 +78,14 @@ export async function POST(request: Request) {
 
     /* ── WhatsApp disconnect ── */
     if (action === "disconnect") {
+      const { disconnectWhatsApp } = await getWhatsApp();
       await disconnectWhatsApp();
       return NextResponse.json({ status: "disconnected" });
     }
 
     /* ── WhatsApp refresh groups ── */
     if (action === "refresh-groups") {
+      const { refreshGroups } = await getWhatsApp();
       const groups = await refreshGroups();
       return NextResponse.json({ groups });
     }
@@ -87,6 +96,7 @@ export async function POST(request: Request) {
       if (!to || !message) {
         return NextResponse.json({ error: "Missing 'to' or 'message'" }, { status: 400 });
       }
+      const { sendWhatsAppMessage } = await getWhatsApp();
       await sendWhatsAppMessage(to, message);
       return NextResponse.json({ success: true });
     }
@@ -97,6 +107,7 @@ export async function POST(request: Request) {
       if (!groupId || !message) {
         return NextResponse.json({ error: "Missing 'groupId' or 'message'" }, { status: 400 });
       }
+      const { sendWhatsAppGroupMessage } = await getWhatsApp();
       await sendWhatsAppGroupMessage(groupId, message);
       return NextResponse.json({ success: true });
     }
@@ -107,6 +118,7 @@ export async function POST(request: Request) {
       if (!recipients?.length || !message) {
         return NextResponse.json({ error: "Missing 'recipients' or 'message'" }, { status: 400 });
       }
+      const { broadcastWhatsApp } = await getWhatsApp();
       const result = await broadcastWhatsApp(recipients, message);
       return NextResponse.json(result);
     }
@@ -117,6 +129,7 @@ export async function POST(request: Request) {
       if (!to || !subject || !text) {
         return NextResponse.json({ error: "Missing 'to', 'subject', or 'text'" }, { status: 400 });
       }
+      const { sendEmail } = await getEmailModule();
       await sendEmail({ to, subject, text, html });
       return NextResponse.json({ success: true });
     }
