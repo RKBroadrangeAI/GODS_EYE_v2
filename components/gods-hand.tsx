@@ -239,7 +239,7 @@ export function GodsHand() {
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg bg-black flex items-center justify-center">
           <Image
-            src="/God's Hand 2.png"
+            src="/image.png"
             alt="God's Hand"
             width={64}
             height={64}
