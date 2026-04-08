@@ -577,7 +577,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             className="pointer-events-none absolute inset-0"
             width={svgSize.w}
             height={svgSize.h}
-            style={{ zIndex: 0 }}
+            style={{ zIndex: 1 }}
           >
             {lines.map((l, i) => {
               const dx = l.x2 - l.x1;
@@ -590,7 +590,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                   stroke={l.color}
                   strokeWidth={3}
                   strokeLinecap="round"
-                  opacity={0.55}
+                  opacity={0.7}
                 />
               );
             })}
@@ -600,7 +600,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         {pipeline.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-zinc-400">
             <Network className="h-16 w-16 mb-3 opacity-30" />
-            <p className="text-lg font-medium">Build Your Mind Map</p>
+            <p className="text-lg font-medium">Build your Smart Graph</p>
             <p className="text-sm mt-1">
               Drag dimensions from the bar above to start
             </p>
@@ -610,7 +610,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
           </div>
         ) : (
-          <div className="relative z-[1]">
+          <div className="relative z-[2]">
             {/* Root label — WYW (Atlanta) */}
             <div className="mb-6 flex items-center gap-3" data-parent-path="root">
               <div
@@ -630,7 +630,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                 <span className="text-base font-bold text-zinc-800">
                   WYW (Atlanta)
                 </span>
-                <span className="text-xs text-zinc-400">
+                <span className="text-sm font-medium text-zinc-600">
                   {year} · Smart Graph
                 </span>
               </div>
