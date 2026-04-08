@@ -28,6 +28,7 @@ import {
   LogOut,
   Bot,
   FileDown,
+  Network,
   ChevronDown,
   ChevronRight,
   Users2,
@@ -364,6 +365,12 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
           <p className="px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-500">
             Tools
           </p>
+          <NavLink
+            href="/app/smart-graph"
+            label="Smart Graph"
+            icon={<Network className="h-4 w-4" />}
+            active={pathname === "/app/smart-graph"}
+          />
           <NavLink
             href="/app/ai-assistant"
             label="Ask Larry"
