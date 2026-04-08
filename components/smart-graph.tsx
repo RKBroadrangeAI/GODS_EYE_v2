@@ -21,6 +21,7 @@ import {
   Network,
   RotateCcw,
   TrendingUp,
+  ListFilter,
 } from "lucide-react";
 import Image from "next/image";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -188,6 +189,19 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
     new Set(DETAIL_COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
   );
   const [showColPicker, setShowColPicker] = useState(false);
+  const colPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close column picker on click outside
+  useEffect(() => {
+    if (!showColPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
+        setShowColPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showColPicker]);
 
   const toggleCol = (key: DetailColumnKey) => {
     setVisibleCols((prev) => {
@@ -554,37 +568,60 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
               Reset
             </button>
           )}
-        </div>
-      </div>
-
-      {/* ── Column selector for sale details ── */}
-      {pipeline.length > 0 && (
-        <div className="relative">
-          <button
-            onClick={() => setShowColPicker(!showColPicker)}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm hover:bg-zinc-50 transition-colors"
-          >
-            <Layers className="h-3.5 w-3.5" />
-            Detail Columns
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showColPicker ? "rotate-180" : ""}`} />
-          </button>
-          {showColPicker && (
-            <div className="absolute top-full mt-1 left-0 z-50 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg">
-              {DETAIL_COLUMNS.map((col) => (
-                <label key={col.key} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-zinc-50 cursor-pointer text-xs text-zinc-700">
-                  <input
-                    type="checkbox"
-                    checked={visibleCols.has(col.key)}
-                    onChange={() => toggleCol(col.key)}
-                    className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  {col.label}
-                </label>
-              ))}
+          {/* Column visibility picker */}
+          {pipeline.length > 0 && (
+            <div className="relative" ref={colPickerRef}>
+              <button
+                onClick={() => setShowColPicker(!showColPicker)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  showColPicker
+                    ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                    : "border-zinc-300 text-zinc-600 hover:bg-zinc-100"
+                }`}
+              >
+                <ListFilter className="h-3.5 w-3.5" />
+                Columns
+                <span className="ml-0.5 rounded-full bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+                  {visibleCols.size}/{DETAIL_COLUMNS.length}
+                </span>
+              </button>
+              {showColPicker && (
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl">
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Show / Hide</p>
+                  {DETAIL_COLUMNS.map((col) => (
+                    <label
+                      key={col.key}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-zinc-50 cursor-pointer text-xs text-zinc-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleCols.has(col.key)}
+                        onChange={() => toggleCol(col.key)}
+                        className="h-3.5 w-3.5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                  <div className="mt-1 border-t border-zinc-100 pt-1 flex gap-1 px-1">
+                    <button
+                      onClick={() => setVisibleCols(new Set(DETAIL_COLUMNS.map((c) => c.key)))}
+                      className="flex-1 rounded px-2 py-1 text-[10px] font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setVisibleCols(new Set())}
+                      className="flex-1 rounded px-2 py-1 text-[10px] font-medium text-zinc-500 hover:bg-zinc-100 transition-colors"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ── Top bar: Available dimensions + Pipeline drop zone ── */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
