@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { monthNames } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { ArrowLeftRight, X } from "lucide-react";
 
 export type FilterOption = { id: string; name: string };
 
@@ -8,15 +13,10 @@ type Props = {
   year?: number;
   withMonth?: boolean;
   withYear?: boolean;
-  /** Entity filter label, e.g. "Sales Associate", "Lead Source" */
   entityLabel?: string;
-  /** Query-param name for the entity filter, e.g. "person", "lead" */
   entityParam?: string;
-  /** List of selectable entities */
   entityOptions?: FilterOption[];
-  /** Currently selected entity id */
   entityValue?: string;
-  /** Comparison support */
   withComparison?: boolean;
   compareMonth?: number;
   compareYear?: number;
@@ -35,6 +35,14 @@ export function DashboardSelectForm({
   compareMonth,
   compareYear,
 }: Props) {
+  const [showCompare, setShowCompare] = useState(
+    compareMonth != null || compareYear != null,
+  );
+
+  function handleClearCompare() {
+    setShowCompare(false);
+  }
+
   return (
     <form className="flex flex-wrap items-center gap-2">
       {entityLabel && entityParam && entityOptions ? (
@@ -70,11 +78,22 @@ export function DashboardSelectForm({
         </select>
       ) : null}
 
-      {withComparison && (
+      {withComparison && !showCompare && (
+        <button
+          type="button"
+          onClick={() => setShowCompare(true)}
+          className="inline-flex items-center gap-1 h-10 rounded-md border border-dashed border-zinc-300 px-3 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 transition-colors"
+        >
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          Compare
+        </button>
+      )}
+
+      {withComparison && showCompare && (
         <>
           <span className="text-xs font-semibold text-zinc-400 uppercase">vs</span>
           {withMonth ? (
-            <select name="compareMonth" defaultValue={String(compareMonth ?? "")} className="h-10 rounded-md border border-zinc-300 px-3 text-sm">
+            <select name="compareMonth" defaultValue={String(compareMonth ?? "")} className="h-10 rounded-md border border-blue-300 bg-blue-50 px-3 text-sm">
               <option value="">—</option>
               {monthNames.map((name, index) => (
                 <option key={name} value={index + 1}>
@@ -83,7 +102,7 @@ export function DashboardSelectForm({
               ))}
             </select>
           ) : null}
-          <select name="compareYear" defaultValue={String(compareYear ?? "")} className="h-10 rounded-md border border-zinc-300 px-3 text-sm">
+          <select name="compareYear" defaultValue={String(compareYear ?? "")} className="h-10 rounded-md border border-blue-300 bg-blue-50 px-3 text-sm">
             <option value="">—</option>
             {[2024, 2025, 2026].map((item) => (
               <option key={item} value={item}>
@@ -91,6 +110,14 @@ export function DashboardSelectForm({
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={handleClearCompare}
+            className="inline-flex items-center justify-center h-8 w-8 rounded-full text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Remove comparison"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </>
       )}
 
