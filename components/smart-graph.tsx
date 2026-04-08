@@ -180,17 +180,20 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
       const res = await fetch(
         `/api/smart-graph?year=${year}&dimensions=${dims.join(",")}&filters=${encodeURIComponent(JSON.stringify(filters))}`,
       );
-      if (!res.ok) return [];
+      if (!res.ok) return { nodes: [] as { id: string; name: string; gp: number; revenue: number; units: number; margin: number; avatarUrl?: string | null }[], saleDetailsByNode: undefined as Record<string, SaleDetail[]> | undefined };
       const data = await res.json();
-      return (data.nodes ?? []) as {
-        id: string;
-        name: string;
-        gp: number;
-        revenue: number;
-        units: number;
-        margin: number;
-        avatarUrl?: string | null;
-      }[];
+      return {
+        nodes: (data.nodes ?? []) as {
+          id: string;
+          name: string;
+          gp: number;
+          revenue: number;
+          units: number;
+          margin: number;
+          avatarUrl?: string | null;
+        }[],
+        saleDetailsByNode: data.saleDetailsByNode as Record<string, SaleDetail[]> | undefined,
+      };
     },
     [year],
   );
@@ -204,15 +207,17 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
       }
       setRootLoading(true);
       try {
-        const nodes = await fetchNodes(dims, {});
+        const { nodes, saleDetailsByNode } = await fetchNodes(dims, {});
+        const isLastDim = dims.length === 1;
         setRootNodes(
           nodes.map((n) => ({
             ...n,
             dimension: dims[0],
             children: [],
-            expanded: false,
+            expanded: isLastDim,
             loading: false,
             filters: { [dims[0]]: n.id },
+            ...(isLastDim && saleDetailsByNode?.[n.id] ? { saleDetails: saleDetailsByNode[n.id] } : {}),
           })),
         );
       } finally {
@@ -300,14 +305,16 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
       }
 
       // Fetch children
-      const childData = await fetchNodes(pipeline, targetNode.filters);
+      const { nodes: childData, saleDetailsByNode } = await fetchNodes(pipeline, targetNode.filters);
+      const isLeafDim = pipeline.indexOf(nextDim) === pipeline.length - 1;
       const children: GraphNode[] = childData.map((c) => ({
         ...c,
         dimension: nextDim,
         children: [],
-        expanded: false,
+        expanded: isLeafDim,
         loading: false,
         filters: { ...targetNode!.filters, [nextDim]: c.id },
+        ...(isLeafDim && saleDetailsByNode?.[c.id] ? { saleDetails: saleDetailsByNode[c.id] } : {}),
       }));
 
       setRootNodes((prev) => {
@@ -781,7 +788,7 @@ function TreeNode({
       {node.expanded && node.children.length === 0 && !node.loading && (
         <div className="ml-16 pl-4 py-2 relative z-20">
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (
-            <div className="rounded-lg border border-zinc-200 overflow-hidden">
+            <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white shadow-sm">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-zinc-50 text-zinc-500 text-left">

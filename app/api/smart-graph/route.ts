@@ -212,7 +212,35 @@ export async function GET(request: Request) {
         };
       });
 
-    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false });
+    // If this is the last dimension, include per-node sale details
+    const isLastDim = dimensions.indexOf(targetDim) === dimensions.length - 1;
+    let saleDetailsByNode: Record<string, unknown[]> | undefined;
+    if (isLastDim) {
+      const detailSql = `
+        SELECT
+          s.id,
+          b.name AS brand,
+          s.reference,
+          s.stock_number,
+          s.sold_for::float,
+          s.profit::float,
+          s.date_out,
+          CASE ${caseLines.join(" ")} ELSE 'other' END AS tier_id
+        FROM sales s
+        LEFT JOIN brands b ON b.id = s.brand_id
+        WHERE ${whereClause}
+        ORDER BY s.date_out DESC, s.sold_for DESC
+      `;
+      const { rows: details } = await pool.query(detailSql, params);
+      saleDetailsByNode = {};
+      for (const d of details) {
+        const key = d.tier_id as string;
+        if (!saleDetailsByNode[key]) saleDetailsByNode[key] = [];
+        saleDetailsByNode[key].push({ id: d.id, brand: d.brand, reference: d.reference, stock_number: d.stock_number, sold_for: d.sold_for, profit: d.profit, date_out: d.date_out });
+      }
+    }
+
+    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false, ...(saleDetailsByNode ? { saleDetailsByNode } : {}) });
   }
 
   /* ── Computed dimension: month ───────────────────── */
@@ -249,7 +277,34 @@ export async function GET(request: Request) {
         margin: r.margin,
       }));
 
-    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false });
+    const isLastDim = dimensions.indexOf(targetDim) === dimensions.length - 1;
+    let saleDetailsByNode: Record<string, unknown[]> | undefined;
+    if (isLastDim) {
+      const detailSql = `
+        SELECT
+          s.id,
+          b.name AS brand,
+          s.reference,
+          s.stock_number,
+          s.sold_for::float,
+          s.profit::float,
+          s.date_out,
+          EXTRACT(MONTH FROM s.date_out)::int AS month_num
+        FROM sales s
+        LEFT JOIN brands b ON b.id = s.brand_id
+        WHERE ${whereClause}
+        ORDER BY s.date_out DESC, s.sold_for DESC
+      `;
+      const { rows: details } = await pool.query(detailSql, params);
+      saleDetailsByNode = {};
+      for (const d of details) {
+        const key = String(d.month_num);
+        if (!saleDetailsByNode[key]) saleDetailsByNode[key] = [];
+        saleDetailsByNode[key].push({ id: d.id, brand: d.brand, reference: d.reference, stock_number: d.stock_number, sold_for: d.sold_for, profit: d.profit, date_out: d.date_out });
+      }
+    }
+
+    return NextResponse.json({ nodes, dimension: targetDim, fullyDrilled: false, ...(saleDetailsByNode ? { saleDetailsByNode } : {}) });
   }
 
   /* ── Standard lookup-table dimension ────────────── */
@@ -285,19 +340,50 @@ export async function GET(request: Request) {
     avatar_url?: string | null;
   }>(sql, params);
 
+  const filteredNodes = rows
+    .filter((r) => r.units > 0 || r.gp !== 0)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      gp: r.gp,
+      revenue: r.revenue,
+      units: r.units,
+      margin: r.margin,
+      ...(r.avatar_url ? { avatarUrl: r.avatar_url } : {}),
+    }));
+
+  // If this is the last dimension, include per-node sale details
+  const isLastDim = dimensions.indexOf(targetDim) === dimensions.length - 1;
+  let saleDetailsByNode: Record<string, unknown[]> | undefined;
+  if (isLastDim) {
+    const detailSql = `
+      SELECT
+        s.id,
+        b.name AS brand,
+        s.reference,
+        s.stock_number,
+        s.sold_for::float,
+        s.profit::float,
+        s.date_out,
+        s.${config.column}::text AS group_id
+      FROM sales s
+      LEFT JOIN brands b ON b.id = s.brand_id
+      WHERE ${whereClause}
+      ORDER BY s.date_out DESC, s.sold_for DESC
+    `;
+    const { rows: details } = await pool.query(detailSql, params);
+    saleDetailsByNode = {};
+    for (const d of details) {
+      const key = d.group_id as string;
+      if (!saleDetailsByNode[key]) saleDetailsByNode[key] = [];
+      saleDetailsByNode[key].push({ id: d.id, brand: d.brand, reference: d.reference, stock_number: d.stock_number, sold_for: d.sold_for, profit: d.profit, date_out: d.date_out });
+    }
+  }
+
   return NextResponse.json({
-    nodes: rows
-      .filter((r) => r.units > 0 || r.gp !== 0)
-      .map((r) => ({
-        id: r.id,
-        name: r.name,
-        gp: r.gp,
-        revenue: r.revenue,
-        units: r.units,
-        margin: r.margin,
-        ...(r.avatar_url ? { avatarUrl: r.avatar_url } : {}),
-      })),
+    nodes: filteredNodes,
     dimension: targetDim,
     fullyDrilled: false,
+    ...(saleDetailsByNode ? { saleDetailsByNode } : {}),
   });
 }
