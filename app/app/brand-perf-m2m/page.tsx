@@ -89,7 +89,7 @@ export default async function BrandPerfM2MPage({
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year}</CardTitle>
+          <CardTitle>{monthNames[month - 1]} {year}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

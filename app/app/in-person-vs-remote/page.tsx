@@ -36,6 +36,8 @@ export default async function InPersonVsRemotePage({
     for (const r of prevData.rows) prevMap.set(r.category, r);
   }
 
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -57,7 +59,7 @@ export default async function InPersonVsRemotePage({
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year}</CardTitle>
+          <CardTitle>{monthNames[month - 1]} {year}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

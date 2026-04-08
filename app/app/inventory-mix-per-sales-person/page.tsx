@@ -87,7 +87,7 @@ export default async function InventoryMixPerSalesPersonPage({
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year}</CardTitle>
+          <CardTitle>{monthNames[month - 1]} {year}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

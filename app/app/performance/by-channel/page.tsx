@@ -39,7 +39,8 @@ export default async function PerformanceByChannelPage({
     prevTotals = prevData.totals;
   }
 
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const monthNamesShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const chartItems = comp.isComparing
     ? data.rows
         .map((r) => ({
@@ -72,8 +73,8 @@ export default async function PerformanceByChannelPage({
       {chartItems.length > 0 && (
         <ComparisonBarChart
           items={chartItems}
-          currentLabel={`${monthNames[month - 1]} ${year}`}
-          previousLabel={`${monthNames[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
+          currentLabel={`${monthNamesShort[month - 1]} ${year}`}
+          previousLabel={`${monthNamesShort[(comp.compareMonth ?? month) - 1]} ${comp.compareYear ?? year}`}
           title="Gross Profit by Channel"
         />
       )}
@@ -110,7 +111,7 @@ export default async function PerformanceByChannelPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year} — Channel Breakdown</CardTitle>
+          <CardTitle>{monthNames[month - 1]} {year} — Channel Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

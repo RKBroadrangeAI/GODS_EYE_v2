@@ -37,6 +37,8 @@ export default async function LeadPerfM2MPage({
     for (const r of prevRows) prevMap.set(r.source, r);
   }
 
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -58,7 +60,7 @@ export default async function LeadPerfM2MPage({
       <ComparisonBanner month={month} year={year} compareMonth={comp.compareMonth} compareYear={comp.compareYear} />
       <Card>
         <CardHeader>
-          <CardTitle>Month {month} / {year}</CardTitle>
+          <CardTitle>{monthNames[month - 1]} {year}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
