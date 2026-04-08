@@ -198,7 +198,7 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
       {/* Logo */}
       <div className="flex flex-col items-center border-b border-zinc-100 px-4 py-5">
         <Image
-          src="/God's Hand 2.png"
+          src="/God's Hand 3.png"
           alt="God's Hand"
           width={80}
           height={80}

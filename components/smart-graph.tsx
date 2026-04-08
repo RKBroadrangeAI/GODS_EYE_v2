@@ -899,7 +899,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                 data-node-path="root"
               >
                 <Image
-                  src="/God's Hand 2.png"
+                  src="/God's Hand 3.png"
                   alt="WYW"
                   width={40}
                   height={40}
