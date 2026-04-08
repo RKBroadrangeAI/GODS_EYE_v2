@@ -76,7 +76,61 @@ export async function GET(request: Request) {
   }
 
   if (!targetDim) {
-    return NextResponse.json({ nodes: [], fullyDrilled: true });
+    // All dimensions drilled — return individual sale rows
+    const detailParams: (string | number)[] = [`${year}-01-01`, `${year}-12-31`];
+    let detailIdx = 3;
+    const detailWhere = [
+      `s.date_out >= $1`,
+      `s.date_out <= $2`,
+      `s.is_cashed = true`,
+    ];
+    for (const [dim, value] of Object.entries(filters)) {
+      if (!VALID_DIMENSIONS.includes(dim)) continue;
+      if (dim === "inventory_tier") {
+        const [lo, hi] = value.split("-").map(Number);
+        if (!isNaN(lo) && !isNaN(hi)) {
+          detailWhere.push(`s.sold_for >= $${detailIdx}`);
+          detailParams.push(lo);
+          detailIdx++;
+          detailWhere.push(`s.sold_for <= $${detailIdx}`);
+          detailParams.push(hi);
+          detailIdx++;
+        }
+      } else if (dim === "month") {
+        detailWhere.push(`EXTRACT(MONTH FROM s.date_out)::int = $${detailIdx}`);
+        detailParams.push(Number(value));
+        detailIdx++;
+      } else if (LOOKUP_DIMENSIONS[dim]) {
+        detailWhere.push(`s.${LOOKUP_DIMENSIONS[dim].column} = $${detailIdx}`);
+        detailParams.push(value);
+        detailIdx++;
+      }
+    }
+    const detailSql = `
+      SELECT
+        s.id,
+        b.name AS brand,
+        s.reference,
+        s.stock_number,
+        s.sold_for::float,
+        s.profit::float,
+        s.date_out
+      FROM sales s
+      LEFT JOIN brands b ON b.id = s.brand_id
+      WHERE ${detailWhere.join(" AND ")}
+      ORDER BY s.date_out DESC, s.sold_for DESC
+    `;
+    const { rows: details } = await pool.query<{
+      id: string;
+      brand: string | null;
+      reference: string | null;
+      stock_number: string | null;
+      sold_for: number;
+      profit: number;
+      date_out: string;
+    }>(detailSql, detailParams);
+
+    return NextResponse.json({ nodes: [], fullyDrilled: true, saleDetails: details });
   }
 
   // Build base WHERE + params

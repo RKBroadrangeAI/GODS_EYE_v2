@@ -41,6 +41,16 @@ type DimensionDef = {
   dotColor: string;
 };
 
+type SaleDetail = {
+  id: string;
+  brand: string | null;
+  reference: string | null;
+  stock_number: string | null;
+  sold_for: number;
+  profit: number;
+  date_out: string;
+};
+
 type GraphNode = {
   id: string;
   name: string;
@@ -54,6 +64,7 @@ type GraphNode = {
   expanded: boolean;
   loading: boolean;
   filters: Record<string, string>;
+  saleDetails?: SaleDetail[];
 };
 
 type SvgLine = {
@@ -254,18 +265,37 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
       const currentDimIdx = pipeline.indexOf(targetNode.dimension);
       const nextDim = pipeline[currentDimIdx + 1];
       if (!nextDim) {
-        // No more dimensions to drill
-        setRootNodes((prev) => {
-          const markDone = (nodes: GraphNode[], depth: number): GraphNode[] =>
-            nodes.map((n, i) =>
-              i !== path[depth]
-                ? n
-                : depth === path.length - 1
-                  ? { ...n, loading: false, expanded: true }
-                  : { ...n, children: markDone(n.children, depth + 1) },
-            );
-          return markDone(prev, 0);
-        });
+        // No more dimensions to drill — fetch individual sale details
+        try {
+          const res = await fetch(
+            `/api/smart-graph?year=${year}&dimensions=${pipeline.join(",")}&filters=${encodeURIComponent(JSON.stringify(targetNode.filters))}`,
+          );
+          const data = res.ok ? await res.json() : { saleDetails: [] };
+          const saleDetails: SaleDetail[] = data.saleDetails ?? [];
+          setRootNodes((prev) => {
+            const markDone = (nodes: GraphNode[], depth: number): GraphNode[] =>
+              nodes.map((n, i) =>
+                i !== path[depth]
+                  ? n
+                  : depth === path.length - 1
+                    ? { ...n, loading: false, expanded: true, saleDetails }
+                    : { ...n, children: markDone(n.children, depth + 1) },
+              );
+            return markDone(prev, 0);
+          });
+        } catch {
+          setRootNodes((prev) => {
+            const markDone = (nodes: GraphNode[], depth: number): GraphNode[] =>
+              nodes.map((n, i) =>
+                i !== path[depth]
+                  ? n
+                  : depth === path.length - 1
+                    ? { ...n, loading: false, expanded: true }
+                    : { ...n, children: markDone(n.children, depth + 1) },
+              );
+            return markDone(prev, 0);
+          });
+        }
         return;
       }
 
@@ -749,8 +779,43 @@ function TreeNode({
       )}
 
       {node.expanded && node.children.length === 0 && !node.loading && (
-        <div className="ml-14 py-2 text-xs text-zinc-400 italic">
-          {hasMoreDimensions ? "No data at this level" : "Leaf node — fully drilled"}
+        <div className="ml-14 py-2">
+          {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (
+            <div className="rounded-lg border border-zinc-200 overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-zinc-50 text-zinc-500 text-left">
+                    <th className="px-3 py-2 font-medium">Brand</th>
+                    <th className="px-3 py-2 font-medium">Reference</th>
+                    <th className="px-3 py-2 font-medium">Stock #</th>
+                    <th className="px-3 py-2 font-medium text-right">Sold For</th>
+                    <th className="px-3 py-2 font-medium text-right">Profit</th>
+                    <th className="px-3 py-2 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {node.saleDetails.map((sale) => (
+                    <tr key={sale.id} className="border-t border-zinc-100 hover:bg-zinc-50/50">
+                      <td className="px-3 py-1.5 font-medium text-zinc-700">{sale.brand ?? "—"}</td>
+                      <td className="px-3 py-1.5 text-zinc-600">{sale.reference ?? "—"}</td>
+                      <td className="px-3 py-1.5 text-zinc-500">{sale.stock_number ?? "—"}</td>
+                      <td className="px-3 py-1.5 text-right text-zinc-700">{formatCurrency(sale.sold_for)}</td>
+                      <td className={`px-3 py-1.5 text-right font-medium ${sale.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                        {formatCurrency(sale.profit)}
+                      </td>
+                      <td className="px-3 py-1.5 text-zinc-500">
+                        {new Date(sale.date_out).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <span className="text-xs text-zinc-400 italic">
+              {hasMoreDimensions ? "No data at this level" : "No sale details"}
+            </span>
+          )}
         </div>
       )}
     </div>
