@@ -87,6 +87,10 @@ export async function GET(request: Request) {
   const whereClause = whereParts.join(" AND ");
 
   // Aggregate at target dimension level
+  // For employees, also grab avatar_url
+  const extraSelect = targetDim === "person" ? `, t.avatar_url` : "";
+  const extraGroup = targetDim === "person" ? `, t.avatar_url` : "";
+
   const sql = `
     SELECT
       t.id,
@@ -97,10 +101,11 @@ export async function GET(request: Request) {
       CASE WHEN SUM(s.sold_for) > 0
            THEN (SUM(s.profit) / SUM(s.sold_for))::float
            ELSE 0 END AS margin
+      ${extraSelect}
     FROM ${config.table} t
     LEFT JOIN sales s ON s.${config.column} = t.id AND ${whereClause}
     WHERE t.is_active = true
-    GROUP BY t.id, t.name
+    GROUP BY t.id, t.name${extraGroup}
     ORDER BY COALESCE(SUM(s.profit), 0) DESC
   `;
 
@@ -111,10 +116,21 @@ export async function GET(request: Request) {
     revenue: number;
     units: number;
     margin: number;
+    avatar_url?: string | null;
   }>(sql, params);
 
   return NextResponse.json({
-    nodes: rows.filter((r) => r.units > 0 || r.gp !== 0),
+    nodes: rows
+      .filter((r) => r.units > 0 || r.gp !== 0)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        gp: r.gp,
+        revenue: r.revenue,
+        units: r.units,
+        margin: r.margin,
+        ...(r.avatar_url ? { avatarUrl: r.avatar_url } : {}),
+      })),
     dimension: targetDim,
     fullyDrilled: false,
   });

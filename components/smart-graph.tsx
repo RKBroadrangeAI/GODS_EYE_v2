@@ -22,6 +22,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { BrandIcon } from "@/components/brand-icon";
+import { UserAvatar } from "@/components/user-avatar";
 
 /* ── Types ─────────────────────────────────────────── */
 
@@ -44,6 +46,7 @@ type GraphNode = {
   revenue: number;
   units: number;
   margin: number;
+  avatarUrl?: string | null;
   dimension: DimensionKey;
   children: GraphNode[];
   expanded: boolean;
@@ -155,6 +158,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         revenue: number;
         units: number;
         margin: number;
+        avatarUrl?: string | null;
       }[];
     },
     [year],
@@ -557,16 +561,16 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
           >
             {lines.map((l, i) => {
               const dx = l.x2 - l.x1;
-              const cp = Math.max(40, Math.abs(dx) * 0.45);
+              const cp = Math.max(60, Math.abs(dx) * 0.5);
               return (
                 <path
                   key={i}
                   d={`M${l.x1},${l.y1} C${l.x1 + cp},${l.y1} ${l.x2 - cp},${l.y2} ${l.x2},${l.y2}`}
                   fill="none"
                   stroke={l.color}
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   strokeLinecap="round"
-                  opacity={0.6}
+                  opacity={0.55}
                 />
               );
             })}
@@ -586,21 +590,21 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
           </div>
         ) : (
-          <div className="relative z-[1] space-y-1">
+          <div className="relative z-[1]">
             {/* Root label */}
-            <div className="mb-4 flex items-center gap-2" data-parent-path="root">
+            <div className="mb-6 flex items-center gap-3" data-parent-path="root">
               <div
-                className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center"
+                className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center shadow-md"
                 data-node-path="root"
               >
-                <Network className="h-4 w-4 text-white" />
+                <Network className="h-5 w-5 text-white" />
               </div>
-              <span className="text-sm font-bold text-zinc-700">
+              <span className="text-base font-bold text-zinc-700">
                 All Sales ({year})
               </span>
             </div>
             {/* Tree nodes */}
-            <div className="ml-6 pl-2">
+            <div className="ml-8 pl-4">
               {rootNodes.map((node, i) => (
                 <TreeNode
                   key={node.id}
@@ -638,55 +642,67 @@ function TreeNode({
   const dimIdx = pipeline.indexOf(node.dimension);
   const hasMoreDimensions = dimIdx < pipeline.length - 1;
 
+  const isPerson = node.dimension === "person";
+  const isBrand = node.dimension === "brand";
+
   return (
-    <div className="py-0.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
+    <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-all hover:bg-zinc-50 ${
-          node.expanded ? "bg-zinc-50" : ""
+        className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50 hover:shadow-sm ${
+          node.expanded ? "bg-zinc-50 shadow-sm" : ""
         }`}
       >
         {/* Expand/collapse icon */}
         {hasMoreDimensions ? (
           node.loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent shrink-0" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent shrink-0" />
           ) : node.expanded ? (
-            <ChevronDown className="h-4 w-4 text-zinc-400 shrink-0" />
+            <ChevronDown className="h-5 w-5 text-zinc-400 shrink-0" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-zinc-400 shrink-0" />
+            <ChevronRight className="h-5 w-5 text-zinc-400 shrink-0" />
           )
         ) : (
-          <span className={`h-2.5 w-2.5 rounded-full ${dim?.dotColor ?? "bg-zinc-400"} shrink-0`} />
+          <span className={`h-3 w-3 rounded-full ${dim?.dotColor ?? "bg-zinc-400"} shrink-0`} />
         )}
+
+        {/* Avatar / Brand image / Dimension icon */}
+        {isPerson ? (
+          <UserAvatar name={node.name} avatarUrl={node.avatarUrl} size={32} />
+        ) : isBrand ? (
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm shrink-0">
+            <BrandIcon name={node.name} size={22} />
+          </span>
+        ) : null}
 
         {/* Name badge */}
         <span
           data-node-path={pathStr}
-          className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold ${
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm ${
             dim?.borderColor ?? "border-zinc-300"
           } ${dim?.bgColor ?? "bg-zinc-50"} ${dim?.color ?? "text-zinc-700"}`}
         >
-          {dim?.icon}
+          {!isPerson && !isBrand && dim?.icon}
           {node.name}
         </span>
 
         {/* Metrics */}
-        <span className="ml-auto flex items-center gap-3 text-xs text-zinc-500">
-          <span className="font-semibold text-zinc-700">
+        <span className="ml-auto flex items-center gap-4 text-xs text-zinc-500">
+          <span className="font-bold text-zinc-700 text-sm">
             {formatCurrency(node.gp)}
           </span>
           <span className="hidden sm:inline">
             {node.units} units
           </span>
           <span className="hidden md:inline text-zinc-400">
-            {formatPercent(node.margin)}
+            {formatPercent(node.margin)} margin
           </span>
         </span>
       </button>
 
       {/* Children */}
       {node.expanded && node.children.length > 0 && (
-        <div className="ml-8 pl-2">
+        <div className="ml-12 mt-1 pl-4">
           {node.children.map((child, i) => (
             <TreeNode
               key={child.id}
@@ -701,7 +717,7 @@ function TreeNode({
       )}
 
       {node.expanded && node.children.length === 0 && !node.loading && (
-        <div className="ml-10 py-1 text-xs text-zinc-400 italic">
+        <div className="ml-14 py-2 text-xs text-zinc-400 italic">
           {hasMoreDimensions ? "No data at this level" : "Leaf node — fully drilled"}
         </div>
       )}
