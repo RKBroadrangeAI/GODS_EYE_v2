@@ -18,7 +18,7 @@ export default async function AppLayout({
   const avatarUrl = rows[0]?.avatar_url ?? null;
 
   /* Executive / view-only users see dashboard only — no sidebar */
-  const showSidebar = auth.role !== "view_only";
+  const showSidebar = auth.role !== "view_only" && auth.role !== "test_user";
 
   return (
     <div className="min-h-screen lg:flex">

@@ -37,6 +37,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  /* test_user can only access gods-hand, dashboard, and menu */
+  if (session.role === "test_user" && pathname.startsWith("/app")) {
+    const allowed = ["/app", "/app/menu", "/app/gods-hand"];
+    const isAllowed =
+      allowed.includes(pathname) || pathname.startsWith("/api/");
+    if (!isAllowed) {
+      return NextResponse.redirect(new URL("/app/gods-hand", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

@@ -12,7 +12,7 @@ import {
 import { sendEmail } from "@/lib/email";
 import QRCode from "qrcode";
 
-const ALLOWED_ROLES = ["admin", "management"];
+const ALLOWED_ROLES = ["admin", "test_user"];
 
 async function requireAdmin() {
   const session = await getSession();
