@@ -577,7 +577,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             className="pointer-events-none absolute inset-0"
             width={svgSize.w}
             height={svgSize.h}
-            style={{ zIndex: 1 }}
+            style={{ zIndex: 10 }}
           >
             {lines.map((l, i) => {
               const dx = l.x2 - l.x1;
