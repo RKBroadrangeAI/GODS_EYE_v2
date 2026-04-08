@@ -121,8 +121,8 @@ export default async function MenuPage() {
       {/* Logo */}
       <div className="flex flex-col items-center">
         <Image
-          src="/God's Eye 2.png"
-          alt="God's Eye"
+          src="/God's Hand 2.png"
+          alt="God's Hand"
           width={160}
           height={160}
           className="object-contain"

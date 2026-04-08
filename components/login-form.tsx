@@ -43,11 +43,11 @@ export function LoginForm() {
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center">
         <Image
-          src="/copy_logo.png"
-          alt="God's Eye"
+          src="/God's Hand 2.png"
+          alt="God's Hand"
           width={80}
           height={80}
-          className="mb-4 rounded-full object-cover"
+          className="mb-4 object-contain"
           unoptimized
         />
         <h1 className="text-2xl font-bold text-orange-600">GOD&apos;S EYE</h1>

@@ -153,8 +153,8 @@ export default async function AppHomePage() {
       {/* Logo header */}
       <div className="flex flex-col items-center justify-center shrink-0">
         <Image
-          src="/God's Eye 2.png"
-          alt="God's Eye"
+          src="/God's Hand 2.png"
+          alt="God's Hand"
           width={100}
           height={100}
           className="object-contain"
