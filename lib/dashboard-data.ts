@@ -105,7 +105,7 @@ export async function getInPersonRemoteData(month: number, year: number, filter?
   const facts = applyEntityFilter(allFacts, filter);
   const map = await getLookupMap("in_person_options");
 
-  const categories = ["In Person", "Remote"].map((label) => {
+  const categories = ["In Store", "Online"].map((label) => {
     const scoped = facts.filter((row) => map.get(row.in_person_option_id ?? "")?.toLowerCase() === label.toLowerCase());
     const gp = scoped.reduce((sum, row) => sum + Number(row.profit ?? 0), 0);
     const count = scoped.length;

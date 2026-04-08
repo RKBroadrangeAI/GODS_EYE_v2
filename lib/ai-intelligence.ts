@@ -97,8 +97,8 @@ export async function buildAiContext(month: number, year: number): Promise<AiCon
 
   const optionMap = new Map(inPersonOptions.map((row) => [row.id, row.name.toLowerCase()]));
 
-  const remoteRows = remoteInPerson.filter((row) => optionMap.get(row.in_person_option_id ?? "") === "remote");
-  const inPersonRows = remoteInPerson.filter((row) => optionMap.get(row.in_person_option_id ?? "") === "in person");
+  const remoteRows = remoteInPerson.filter((row) => optionMap.get(row.in_person_option_id ?? "") === "online");
+  const inPersonRows = remoteInPerson.filter((row) => optionMap.get(row.in_person_option_id ?? "") === "in store");
 
   const remoteMargin = safeDivide(
     remoteRows.reduce((s, r) => s + Number(r.profit ?? 0), 0),
