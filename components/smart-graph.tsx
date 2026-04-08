@@ -612,7 +612,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         ) : (
           <div className="relative">
             {/* Root label — WYW (Atlanta) */}
-            <div className="mb-6 flex items-center gap-3" data-parent-path="root">
+            <div className="mb-6 flex items-center gap-3 relative z-20" data-parent-path="root">
               <div
                 className="h-12 w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden"
                 data-node-path="root"
@@ -681,7 +681,7 @@ function TreeNode({
     <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50/60 hover:shadow-sm ${
+        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50/60 hover:shadow-sm ${
           node.expanded ? "bg-zinc-50/60 shadow-sm" : ""
         }`}
       >
