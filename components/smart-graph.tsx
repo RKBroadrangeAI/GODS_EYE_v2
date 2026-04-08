@@ -718,8 +718,8 @@ function TreeNode({
     <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-white hover:shadow-sm ${
-          node.expanded ? "bg-white shadow-sm" : ""
+        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-white/70 hover:shadow-sm ${
+          node.expanded ? "bg-white/70 shadow-sm" : ""
         }`}
       >
         {/* Expand/collapse icon */}
@@ -788,7 +788,7 @@ function TreeNode({
       {node.expanded && node.children.length === 0 && !node.loading && (
         <div className="ml-16 pl-4 py-2 relative z-20">
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (
-            <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white shadow-sm">
+            <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white/80 shadow-sm backdrop-blur-sm">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-zinc-50 text-zinc-500 text-left">
