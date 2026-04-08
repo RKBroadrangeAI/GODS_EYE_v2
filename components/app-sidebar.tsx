@@ -36,6 +36,7 @@ import {
   Lightbulb,
   FileBarChart2,
   Sparkles,
+  Hand,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import { getBrandImagePath } from "@/lib/brand-icons";
@@ -391,6 +392,14 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
               label="Export & Backup"
               icon={<FileDown className="h-4 w-4" />}
               active={pathname === "/app/export"}
+            />
+          )}
+          {role === "admin" && (
+            <NavLink
+              href="/app/gods-hand"
+              label="God's Hand"
+              icon={<Hand className="h-4 w-4" />}
+              active={pathname === "/app/gods-hand"}
             />
           )}
         </div>
