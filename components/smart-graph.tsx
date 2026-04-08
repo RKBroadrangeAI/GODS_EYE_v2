@@ -27,6 +27,19 @@ import { formatCurrency, formatPercent } from "@/lib/format";
 import { BrandIcon } from "@/components/brand-icon";
 import { UserAvatar } from "@/components/user-avatar";
 
+/* ── Sale detail column definitions ──────────────── */
+
+type DetailColumnKey = "brand" | "reference" | "stock_number" | "sold_for" | "profit" | "date";
+
+const DETAIL_COLUMNS: { key: DetailColumnKey; label: string; defaultOn: boolean }[] = [
+  { key: "brand", label: "Brand", defaultOn: true },
+  { key: "reference", label: "Reference", defaultOn: true },
+  { key: "stock_number", label: "Stock #", defaultOn: true },
+  { key: "sold_for", label: "Sold For", defaultOn: true },
+  { key: "profit", label: "Profit", defaultOn: true },
+  { key: "date", label: "Date", defaultOn: true },
+];
+
 /* ── Types ─────────────────────────────────────────── */
 
 type DimensionKey = "person" | "brand" | "lead_source" | "condition" | "channel" | "inventory_tier" | "month";
@@ -80,7 +93,7 @@ type SvgLine = {
 const ALL_DIMENSIONS: DimensionDef[] = [
   {
     key: "person",
-    label: "Person",
+    label: "Associate",
     icon: <Users className="h-4 w-4" />,
     color: "text-blue-700",
     bgColor: "bg-blue-50",
@@ -171,6 +184,19 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
   const treeRef = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<SvgLine[]>([]);
   const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
+  const [visibleCols, setVisibleCols] = useState<Set<DetailColumnKey>>(
+    new Set(DETAIL_COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)),
+  );
+  const [showColPicker, setShowColPicker] = useState(false);
+
+  const toggleCol = (key: DetailColumnKey) => {
+    setVisibleCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const available = ALL_DIMENSIONS.filter((d) => !pipeline.includes(d.key));
 
@@ -531,6 +557,35 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         </div>
       </div>
 
+      {/* ── Column selector for sale details ── */}
+      {pipeline.length > 0 && (
+        <div className="relative">
+          <button
+            onClick={() => setShowColPicker(!showColPicker)}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm hover:bg-zinc-50 transition-colors"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Detail Columns
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showColPicker ? "rotate-180" : ""}`} />
+          </button>
+          {showColPicker && (
+            <div className="absolute top-full mt-1 left-0 z-50 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg">
+              {DETAIL_COLUMNS.map((col) => (
+                <label key={col.key} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-zinc-50 cursor-pointer text-xs text-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={visibleCols.has(col.key)}
+                    onChange={() => toggleCol(col.key)}
+                    className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Top bar: Available dimensions + Pipeline drop zone ── */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
         {/* Available dimension chips */}
@@ -682,6 +737,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                   pathStr={String(i)}
                   pipeline={pipeline}
                   onToggle={toggleNode}
+                  visibleCols={visibleCols}
                 />
               ))}
             </div>
@@ -700,12 +756,14 @@ function TreeNode({
   pathStr,
   pipeline,
   onToggle,
+  visibleCols,
 }: {
   node: GraphNode;
   path: number[];
   pathStr: string;
   pipeline: DimensionKey[];
   onToggle: (path: number[]) => void;
+  visibleCols: Set<DetailColumnKey>;
 }) {
   const dim = dimMap.get(node.dimension);
   const dimIdx = pipeline.indexOf(node.dimension);
@@ -780,6 +838,7 @@ function TreeNode({
               pathStr={`${pathStr}-${i}`}
               pipeline={pipeline}
               onToggle={onToggle}
+              visibleCols={visibleCols}
             />
           ))}
         </div>
@@ -792,27 +851,27 @@ function TreeNode({
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-zinc-50 text-zinc-500 text-left">
-                    <th className="px-3 py-2 font-medium">Brand</th>
-                    <th className="px-3 py-2 font-medium">Reference</th>
-                    <th className="px-3 py-2 font-medium">Stock #</th>
-                    <th className="px-3 py-2 font-medium text-right">Sold For</th>
-                    <th className="px-3 py-2 font-medium text-right">Profit</th>
-                    <th className="px-3 py-2 font-medium">Date</th>
+                    {visibleCols.has("brand") && <th className="px-3 py-2 font-medium">Brand</th>}
+                    {visibleCols.has("reference") && <th className="px-3 py-2 font-medium">Reference</th>}
+                    {visibleCols.has("stock_number") && <th className="px-3 py-2 font-medium">Stock #</th>}
+                    {visibleCols.has("sold_for") && <th className="px-3 py-2 font-medium text-right">Sold For</th>}
+                    {visibleCols.has("profit") && <th className="px-3 py-2 font-medium text-right">Profit</th>}
+                    {visibleCols.has("date") && <th className="px-3 py-2 font-medium">Date</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {node.saleDetails.map((sale) => (
                     <tr key={sale.id} className="border-t border-zinc-100 hover:bg-zinc-50/50">
-                      <td className="px-3 py-1.5 font-medium text-zinc-700">{sale.brand ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-zinc-600">{sale.reference ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-zinc-500">{sale.stock_number ?? "—"}</td>
-                      <td className="px-3 py-1.5 text-right text-zinc-700">{formatCurrency(sale.sold_for)}</td>
-                      <td className={`px-3 py-1.5 text-right font-medium ${sale.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {visibleCols.has("brand") && <td className="px-3 py-1.5 font-medium text-zinc-700">{sale.brand ?? "—"}</td>}
+                      {visibleCols.has("reference") && <td className="px-3 py-1.5 text-zinc-600">{sale.reference ?? "—"}</td>}
+                      {visibleCols.has("stock_number") && <td className="px-3 py-1.5 text-zinc-500">{sale.stock_number ?? "—"}</td>}
+                      {visibleCols.has("sold_for") && <td className="px-3 py-1.5 text-right text-zinc-700">{formatCurrency(sale.sold_for)}</td>}
+                      {visibleCols.has("profit") && <td className={`px-3 py-1.5 text-right font-medium ${sale.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                         {formatCurrency(sale.profit)}
-                      </td>
-                      <td className="px-3 py-1.5 text-zinc-500">
+                      </td>}
+                      {visibleCols.has("date") && <td className="px-3 py-1.5 text-zinc-500">
                         {new Date(sale.date_out).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </td>
+                      </td>}
                     </tr>
                   ))}
                 </tbody>
