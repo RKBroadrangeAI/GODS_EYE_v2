@@ -22,6 +22,9 @@ import {
   RotateCcw,
   TrendingUp,
   ListFilter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Image from "next/image";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -40,6 +43,9 @@ const DETAIL_COLUMNS: { key: DetailColumnKey; label: string; defaultOn: boolean 
   { key: "profit", label: "Profit", defaultOn: true },
   { key: "date", label: "Date", defaultOn: true },
 ];
+
+type SortDir = "asc" | "desc";
+type SortConfig = { key: DetailColumnKey; dir: SortDir } | null;
 
 /* ── Types ─────────────────────────────────────────── */
 
@@ -190,18 +196,32 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
   );
   const [showColPicker, setShowColPicker] = useState(false);
   const colPickerRef = useRef<HTMLDivElement>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [showSortPicker, setShowSortPicker] = useState(false);
+  const sortPickerRef = useRef<HTMLDivElement>(null);
 
-  // Close column picker on click outside
+  // Close pickers on click outside
   useEffect(() => {
-    if (!showColPicker) return;
+    if (!showColPicker && !showSortPicker) return;
     const handler = (e: MouseEvent) => {
-      if (colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
+      if (showColPicker && colPickerRef.current && !colPickerRef.current.contains(e.target as Node)) {
         setShowColPicker(false);
+      }
+      if (showSortPicker && sortPickerRef.current && !sortPickerRef.current.contains(e.target as Node)) {
+        setShowSortPicker(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [showColPicker]);
+  }, [showColPicker, showSortPicker]);
+
+  const cycleSortCol = (key: DetailColumnKey) => {
+    setSortConfig((prev) => {
+      if (!prev || prev.key !== key) return { key, dir: "asc" };
+      if (prev.dir === "asc") return { key, dir: "desc" };
+      return null; // third click clears
+    });
+  };
 
   const toggleCol = (key: DetailColumnKey) => {
     setVisibleCols((prev) => {
@@ -620,6 +640,64 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
               )}
             </div>
           )}
+          {/* Sort picker */}
+          {pipeline.length > 0 && (
+            <div className="relative" ref={sortPickerRef}>
+              <button
+                onClick={() => setShowSortPicker(!showSortPicker)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  showSortPicker
+                    ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                    : sortConfig
+                      ? "border-indigo-300 bg-indigo-50/50 text-indigo-600"
+                      : "border-zinc-300 text-zinc-600 hover:bg-zinc-100"
+                }`}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                Sort
+                {sortConfig && (
+                  <span className="ml-0.5 rounded-full bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-[10px] font-bold leading-none">
+                    {DETAIL_COLUMNS.find((c) => c.key === sortConfig.key)?.label} {sortConfig.dir === "asc" ? "↑" : "↓"}
+                  </span>
+                )}
+              </button>
+              {showSortPicker && (
+                <div className="absolute right-0 top-full mt-1 z-50 w-52 rounded-lg border border-zinc-200 bg-white p-1.5 shadow-xl">
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Sort by</p>
+                  {DETAIL_COLUMNS.map((col) => {
+                    const isActive = sortConfig?.key === col.key;
+                    return (
+                      <button
+                        key={col.key}
+                        onClick={() => { cycleSortCol(col.key); }}
+                        className={`flex w-full items-center justify-between gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                          isActive ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-zinc-700 hover:bg-zinc-50"
+                        }`}
+                      >
+                        <span>{col.label}</span>
+                        {isActive && (
+                          sortConfig!.dir === "asc"
+                            ? <ArrowUp className="h-3.5 w-3.5" />
+                            : <ArrowDown className="h-3.5 w-3.5" />
+                        )}
+                        {!isActive && <ArrowUpDown className="h-3 w-3 text-zinc-300" />}
+                      </button>
+                    );
+                  })}
+                  {sortConfig && (
+                    <div className="mt-1 border-t border-zinc-100 pt-1 px-1">
+                      <button
+                        onClick={() => { setSortConfig(null); setShowSortPicker(false); }}
+                        className="w-full rounded px-2 py-1 text-[10px] font-medium text-zinc-500 hover:bg-zinc-100 transition-colors"
+                      >
+                        Clear sort
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -775,6 +853,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                   pipeline={pipeline}
                   onToggle={toggleNode}
                   visibleCols={visibleCols}
+                  sortConfig={sortConfig}
                 />
               ))}
             </div>
@@ -794,6 +873,7 @@ function TreeNode({
   pipeline,
   onToggle,
   visibleCols,
+  sortConfig,
 }: {
   node: GraphNode;
   path: number[];
@@ -801,6 +881,7 @@ function TreeNode({
   pipeline: DimensionKey[];
   onToggle: (path: number[]) => void;
   visibleCols: Set<DetailColumnKey>;
+  sortConfig: SortConfig;
 }) {
   const dim = dimMap.get(node.dimension);
   const dimIdx = pipeline.indexOf(node.dimension);
@@ -876,6 +957,7 @@ function TreeNode({
               pipeline={pipeline}
               onToggle={onToggle}
               visibleCols={visibleCols}
+              sortConfig={sortConfig}
             />
           ))}
         </div>
@@ -883,7 +965,23 @@ function TreeNode({
 
       {node.expanded && node.children.length === 0 && !node.loading && (
         <div className="ml-16 pl-4 py-2 relative z-20">
-          {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (
+          {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (() => {
+            const sorted = sortConfig
+              ? [...node.saleDetails].sort((a, b) => {
+                  const { key, dir } = sortConfig;
+                  let av: string | number, bv: string | number;
+                  if (key === "sold_for") { av = a.sold_for; bv = b.sold_for; }
+                  else if (key === "profit") { av = a.profit; bv = b.profit; }
+                  else if (key === "date") { av = a.date_out; bv = b.date_out; }
+                  else if (key === "brand") { av = (a.brand ?? "").toLowerCase(); bv = (b.brand ?? "").toLowerCase(); }
+                  else if (key === "reference") { av = (a.reference ?? "").toLowerCase(); bv = (b.reference ?? "").toLowerCase(); }
+                  else { av = (a.stock_number ?? "").toLowerCase(); bv = (b.stock_number ?? "").toLowerCase(); }
+                  if (av < bv) return dir === "asc" ? -1 : 1;
+                  if (av > bv) return dir === "asc" ? 1 : -1;
+                  return 0;
+                })
+              : node.saleDetails;
+            return (
             <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white/80 shadow-sm backdrop-blur-sm">
               <table className="w-full text-xs">
                 <thead>
@@ -897,7 +995,7 @@ function TreeNode({
                   </tr>
                 </thead>
                 <tbody>
-                  {node.saleDetails.map((sale) => (
+                  {sorted.map((sale) => (
                     <tr key={sale.id} className="border-t border-zinc-100 hover:bg-zinc-50/50">
                       {visibleCols.has("brand") && <td className="px-3 py-1.5 font-medium text-zinc-700">{sale.brand ?? "—"}</td>}
                       {visibleCols.has("reference") && <td className="px-3 py-1.5 text-zinc-600">{sale.reference ?? "—"}</td>}
@@ -914,7 +1012,8 @@ function TreeNode({
                 </tbody>
               </table>
             </div>
-          ) : (
+            );
+          })() : (
             <span className="text-xs text-zinc-400 italic">
               {hasMoreDimensions ? "No data at this level" : "No sale details"}
             </span>
