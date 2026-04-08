@@ -610,7 +610,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
           </div>
         ) : (
-          <div className="relative z-[2]">
+          <div className="relative">
             {/* Root label — WYW (Atlanta) */}
             <div className="mb-6 flex items-center gap-3" data-parent-path="root">
               <div
@@ -681,8 +681,8 @@ function TreeNode({
     <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50 hover:shadow-sm ${
-          node.expanded ? "bg-zinc-50 shadow-sm" : ""
+        className={`group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-zinc-50/60 hover:shadow-sm ${
+          node.expanded ? "bg-zinc-50/60 shadow-sm" : ""
         }`}
       >
         {/* Expand/collapse icon */}
