@@ -30,15 +30,14 @@ export function RotatingCarousel({
   const radius = Math.max(count * (itemSize + 16) / (2 * Math.PI), 120);
 
   const [rotation, setRotation] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef<{ x: number; rot: number } | null>(null);
   const animRef = useRef<number>(0);
   const lastTime = useRef<number>(0);
 
-  // Auto-rotate
+  // Auto-rotate (never pauses)
   useEffect(() => {
-    if (paused || dragging || count === 0) return;
+    if (dragging || count === 0) return;
     let running = true;
     lastTime.current = performance.now();
     const animate = (now: number) => {
@@ -54,22 +53,11 @@ export function RotatingCarousel({
       running = false;
       cancelAnimationFrame(animRef.current);
     };
-  }, [paused, dragging, count]);
-
-  // Pause on select
-  useEffect(() => {
-    if (selectedId) setPaused(true);
-  }, [selectedId]);
+  }, [dragging, count]);
 
   const handleSelect = useCallback(
     (id: string) => {
-      if (selectedId === id) {
-        onSelect(null);
-        setPaused(false);
-      } else {
-        onSelect(id);
-        setPaused(true);
-      }
+      onSelect(selectedId === id ? null : id);
     },
     [selectedId, onSelect],
   );
