@@ -21,6 +21,17 @@ type Employee = {
   avatar_url: string | null;
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  management: "Management",
+  sales_associate: "Sales Associate",
+  view_only: "Executive",
+  test_user: "Test User",
+};
+function roleLabel(role: string) {
+  return ROLE_LABELS[role] ?? role.replace("_", " ");
+}
+
 export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; isAdmin?: boolean }) {
   const router = useRouter();
   const { success, error } = useToast();
@@ -185,9 +196,10 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
               <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                 emp.role === "admin" ? "bg-red-100 text-red-700"
                   : emp.role === "management" ? "bg-amber-100 text-amber-700"
+                  : emp.role === "view_only" ? "bg-purple-100 text-purple-700"
                   : "bg-blue-100 text-blue-700"
               }`}>
-                {emp.role.replace("_", " ")}
+                {roleLabel(emp.role)}
               </span>
             </div>
           );
@@ -231,10 +243,10 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
                       onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
                       className="h-9 rounded-md border border-zinc-300 px-3 text-sm"
                     >
-                      <option value="admin">admin</option>
-                      <option value="management">management</option>
-                      <option value="sales_associate">sales_associate</option>
-                      <option value="view_only">view_only</option>
+                      <option value="admin">Admin</option>
+                      <option value="management">Management</option>
+                      <option value="sales_associate">Sales Associate</option>
+                      <option value="view_only">Executive</option>
                     </select>
                   </div>
                   <div className="flex gap-2">
@@ -251,7 +263,7 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
                   <p className="font-semibold text-zinc-800">{emp.name}</p>
                   <p className="text-sm text-zinc-500">{emp.email ?? "No email"}</p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <span className="text-xs text-zinc-400">Role: <span className="font-medium text-zinc-600">{emp.role.replace("_", " ")}</span></span>
+                    <span className="text-xs text-zinc-400">Role: <span className="font-medium text-zinc-600">{roleLabel(emp.role)}</span></span>
                     <span className="text-xs text-zinc-400">Initials: <span className="font-medium text-zinc-600">{emp.initials ?? "—"}</span></span>
                     <span className="text-xs text-zinc-400">Login: <span className={`font-medium ${emp.has_password ? "text-green-600" : "text-zinc-500"}`}>{emp.has_password ? "Set" : "None"}</span></span>
                     <span className="text-xs text-zinc-400">Active: <span className={`font-medium ${emp.is_active ? "text-green-600" : "text-red-500"}`}>{emp.is_active ? "Yes" : "No"}</span></span>
@@ -277,10 +289,10 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
           <Input name="email" type="email" placeholder="email@company.com" />
           <Input name="initials" placeholder="AB" required maxLength={4} />
           <select name="role" className="h-10 rounded-md border border-zinc-300 px-3 text-sm" defaultValue="sales_associate">
-            <option value="admin">admin</option>
-            <option value="management">management</option>
-            <option value="sales_associate">sales_associate</option>
-            <option value="view_only">view_only</option>
+            <option value="admin">Admin</option>
+            <option value="management">Management</option>
+            <option value="sales_associate">Sales Associate</option>
+            <option value="view_only">Executive</option>
           </select>
           <Input name="password" type="password" placeholder="Password (min 6)" />
           <Button type="submit" disabled={isPending}>Add Employee</Button>
@@ -322,7 +334,7 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
               </TableCell>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.email ?? "—"}</TableCell>
-              <TableCell>{row.role}</TableCell>
+              <TableCell>{roleLabel(row.role)}</TableCell>
               <TableCell>{row.initials ?? "—"}</TableCell>
               <TableCell>
                 {row.has_password ? (
