@@ -315,7 +315,7 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
                   <ChevronRight className="h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 group-hover:translate-x-0.5" />
                 )}
                 <span
-                  className={`rounded-md px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group-hover:scale-105 group-hover:shadow-sm ${cat.badgeCls}`}
+                  className={`sidebar-badge-shimmer rounded-md px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group-hover:scale-105 group-hover:shadow-md group-hover:shadow-amber-200/50 ${cat.badgeCls}`}
                 >
                   {cat.label}
                 </span>
