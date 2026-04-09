@@ -34,7 +34,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/app/sales-performance");
+    router.push("/app");
     router.refresh();
   }
 
