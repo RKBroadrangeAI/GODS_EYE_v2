@@ -27,10 +27,10 @@ body {
 /* Gold shimmer sweep for sidebar category badges */
 @keyframes shimmer-gold {
   0% {
-    background-position: -200% center;
+    background-position: 200% center;
   }
   100% {
-    background-position: 200% center;
+    background-position: -200% center;
   }
 }
 
