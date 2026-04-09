@@ -307,15 +307,15 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
             <div key={cat.key} className={`mt-3 rounded-lg border-l-4 ${cat.border} bg-zinc-50/50`}>
               <button
                 onClick={() => toggle(cat.key)}
-                className="flex w-full items-center gap-2 px-3 py-2"
+                className="flex w-full items-center gap-2 px-3 py-2 group"
               >
                 {isOpen ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400 transition-transform duration-200" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
+                  <ChevronRight className="h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 group-hover:translate-x-0.5" />
                 )}
                 <span
-                  className={`rounded-md px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider ${cat.badgeCls}`}
+                  className={`rounded-md px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 group-hover:scale-105 group-hover:shadow-sm ${cat.badgeCls}`}
                 >
                   {cat.label}
                 </span>
