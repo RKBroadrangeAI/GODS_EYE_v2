@@ -248,15 +248,19 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
         </div>
 
       {/* User */}
-      <div className="flex items-center gap-3 border-b border-zinc-100 px-5 py-3">
+      <Link
+        href="/app/profile"
+        className="flex items-center gap-3 border-b border-zinc-100 px-5 py-3 transition-colors hover:bg-zinc-50"
+      >
         <UserAvatar name={name} avatarUrl={avatarUrl} size={36} />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-zinc-800">{name}</p>
           <p className="text-[10px] uppercase tracking-wider text-zinc-400">
             {role.replace("_", " ")}
           </p>
         </div>
-      </div>
+        <span className="text-[10px] text-zinc-400">Edit</span>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
