@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/providers";
 import { UserAvatar } from "@/components/user-avatar";
+import { BrandIcon } from "@/components/brand-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KeyRound, Trash2, X } from "lucide-react";
+import { KeyRound, Trash2, X, ChevronLeft, ChevronRight, Users, ShoppingBag } from "lucide-react";
 
 type Employee = {
   id: string;
@@ -20,12 +21,49 @@ type Employee = {
   avatar_url: string | null;
 };
 
-export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; isAdmin?: boolean }) {
+type Brand = {
+  id: string;
+  name: string;
+  is_active: boolean;
+};
+
+/* ── Horizontal scroll carousel ── */
+function Carousel({ children, label, icon }: { children: React.ReactNode; label: string; icon: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scroll = (dir: "left" | "right") => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
+          {icon}
+          {label}
+        </h3>
+        <div className="flex items-center gap-1">
+          <button onClick={() => scroll("left")} className="rounded-full border border-zinc-200 p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button onClick={() => scroll("right")} className="rounded-full border border-zinc-200 p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: Employee[]; brands?: Brand[]; isAdmin?: boolean }) {
   const router = useRouter();
   const { success, error } = useToast();
   const [isPending, startTransition] = useTransition();
   const [passwordFor, setPasswordFor] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
 
   async function addEmployee(formData: FormData) {
     const password = String(formData.get("password") ?? "");
@@ -124,8 +162,76 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
     startTransition(() => router.refresh());
   }
 
+  const activeRows = rows.filter((r) => r.is_active);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* ── Employee Carousel ── */}
+      <Carousel label={`Team (${activeRows.length})`} icon={<Users className="h-4 w-4 text-indigo-500" />}>
+        {activeRows.map((emp) => (
+          <button
+            key={emp.id}
+            onClick={() => setSelectedEmployee(selectedEmployee === emp.id ? null : emp.id)}
+            className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-3 min-w-[90px] snap-start transition-all ${
+              selectedEmployee === emp.id
+                ? "border-indigo-400 bg-indigo-50 shadow-md ring-2 ring-indigo-200"
+                : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+            }`}
+          >
+            <UserAvatar name={emp.name} avatarUrl={emp.avatar_url} size={48} />
+            <span className="text-xs font-medium text-zinc-700 whitespace-nowrap max-w-[80px] truncate">{emp.name.split(" ")[0]}</span>
+            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+              emp.role === "admin" ? "bg-red-100 text-red-700"
+                : emp.role === "management" ? "bg-amber-100 text-amber-700"
+                : "bg-blue-100 text-blue-700"
+            }`}>
+              {emp.role.replace("_", " ")}
+            </span>
+          </button>
+        ))}
+      </Carousel>
+
+      {/* ── Selected Employee Detail ── */}
+      {selectedEmployee && (() => {
+        const emp = rows.find((r) => r.id === selectedEmployee);
+        if (!emp) return null;
+        return (
+          <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <UserAvatar name={emp.name} avatarUrl={emp.avatar_url} size={56} />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-zinc-800">{emp.name}</p>
+              <p className="text-sm text-zinc-500">{emp.email ?? "No email"}</p>
+              <div className="flex flex-wrap gap-2 mt-1">
+                <span className="text-xs text-zinc-400">Role: <span className="font-medium text-zinc-600">{emp.role.replace("_", " ")}</span></span>
+                <span className="text-xs text-zinc-400">Initials: <span className="font-medium text-zinc-600">{emp.initials ?? "—"}</span></span>
+                <span className="text-xs text-zinc-400">Login: <span className={`font-medium ${emp.has_password ? "text-green-600" : "text-zinc-500"}`}>{emp.has_password ? "Set" : "None"}</span></span>
+                <span className="text-xs text-zinc-400">Active: <span className={`font-medium ${emp.is_active ? "text-green-600" : "text-red-500"}`}>{emp.is_active ? "Yes" : "No"}</span></span>
+              </div>
+            </div>
+            <button onClick={() => setSelectedEmployee(null)} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* ── Brands Carousel ── */}
+      {brands.length > 0 && (
+        <Carousel label={`Brands (${brands.length})`} icon={<ShoppingBag className="h-4 w-4 text-amber-500" />}>
+          {brands.map((brand) => (
+            <div
+              key={brand.id}
+              className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 min-w-[90px] snap-start hover:border-zinc-300 hover:shadow-sm transition-all"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-50 border border-zinc-100">
+                <BrandIcon name={brand.name} size={32} />
+              </span>
+              <span className="text-xs font-medium text-zinc-700 whitespace-nowrap max-w-[80px] truncate">{brand.name}</span>
+            </div>
+          ))}
+        </Carousel>
+      )}
+
       {isAdmin && (
         <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-6">
           <Input name="name" placeholder="Employee Name" required />
