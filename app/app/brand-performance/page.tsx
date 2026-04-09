@@ -40,18 +40,37 @@ export default async function BrandPerformancePage({
       seller_avatars: (string | null)[];
     }>(`
       SELECT
-        s.brand_id,
-        EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
-        COALESCE(SUM(s.profit), 0)::text AS total_gp,
-        COUNT(*)::text AS total_units,
-        ARRAY_AGG(DISTINCT e.id) AS seller_ids,
-        ARRAY_AGG(DISTINCT e.name) AS seller_names,
-        ARRAY_AGG(DISTINCT e.avatar_url) AS seller_avatars
-      FROM sales s
-      JOIN employees e ON e.id = s.sales_person_id
-      WHERE s.brand_id IS NOT NULL
-      GROUP BY s.brand_id, EXTRACT(YEAR FROM s.date_out)
-      ORDER BY s.brand_id, sale_year DESC
+        ds.brand_id,
+        ds.sale_year,
+        ds.total_gp,
+        ds.total_units,
+        COALESCE(sellers.ids, '{}') AS seller_ids,
+        COALESCE(sellers.names, '{}') AS seller_names,
+        COALESCE(sellers.avatars, '{}') AS seller_avatars
+      FROM (
+        SELECT
+          s.brand_id,
+          EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
+          COALESCE(SUM(s.profit), 0)::text AS total_gp,
+          COUNT(*)::text AS total_units
+        FROM sales s
+        WHERE s.brand_id IS NOT NULL AND s.date_out IS NOT NULL
+        GROUP BY s.brand_id, EXTRACT(YEAR FROM s.date_out)
+      ) ds
+      LEFT JOIN LATERAL (
+        SELECT
+          array_agg(sub.id ORDER BY sub.id) AS ids,
+          array_agg(sub.name ORDER BY sub.id) AS names,
+          array_agg(sub.avatar_url ORDER BY sub.id) AS avatars
+        FROM (
+          SELECT DISTINCT e.id, e.name, e.avatar_url
+          FROM sales s2
+          JOIN employees e ON e.id = s2.sales_person_id
+          WHERE s2.brand_id = ds.brand_id
+            AND EXTRACT(YEAR FROM s2.date_out)::text = ds.sale_year
+        ) sub
+      ) sellers ON true
+      ORDER BY ds.brand_id, ds.sale_year DESC
     `),
   ]);
 
