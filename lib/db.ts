@@ -13,8 +13,9 @@ function createPool(): Pool {
     connectionString,
     ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
     max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    min: 2,
+    idleTimeoutMillis: 60000,
+    connectionTimeoutMillis: 5000,
   });
 }
 

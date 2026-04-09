@@ -106,18 +106,10 @@ export function RotatingCarousel({
   return (
     <div className="space-y-2">
       {label && (
-        <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
-            {icon}
-            {label}
-          </h3>
-          <button
-            onClick={() => { setPaused(!paused); if (selectedId) onSelect(null); }}
-            className="text-[10px] text-zinc-400 hover:text-zinc-600 transition-colors px-2 py-1 rounded-md hover:bg-zinc-100"
-          >
-            {paused ? "▶ Resume" : "⏸ Pause"}
-          </button>
-        </div>
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
+          {icon}
+          {label}
+        </h3>
       )}
       <div
         className="relative overflow-hidden select-none cursor-grab active:cursor-grabbing"
