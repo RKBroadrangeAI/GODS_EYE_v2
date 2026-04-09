@@ -30,28 +30,60 @@ type Brand = {
 /* ── Horizontal scroll carousel ── */
 function Carousel({ children, label, icon }: { children: React.ReactNode; label: string; icon: React.ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scroll = (dir: "left" | "right") => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
   };
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const pageWidth = el.clientWidth * 0.8;
+    el.scrollBy({ left: dir === "left" ? -pageWidth : pageWidth, behavior: "smooth" });
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
-          {icon}
-          {label}
-        </h3>
-        <div className="flex items-center gap-1">
-          <button onClick={() => scroll("left")} className="rounded-full border border-zinc-200 p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
-            <ChevronLeft className="h-4 w-4" />
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
+        {icon}
+        {label}
+      </h3>
+      <div className="relative group">
+        {/* Left arrow */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-zinc-200 shadow-lg text-zinc-500 hover:text-zinc-800 hover:shadow-xl transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 -ml-3"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </button>
-          <button onClick={() => scroll("right")} className="rounded-full border border-zinc-200 p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
-            <ChevronRight className="h-4 w-4" />
+        )}
+        {/* Right arrow */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-zinc-200 shadow-lg text-zinc-500 hover:text-zinc-800 hover:shadow-xl transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 -mr-3"
+          >
+            <ChevronRight className="h-5 w-5" />
           </button>
+        )}
+        {/* Fade edges */}
+        {canScrollLeft && <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-[5]" />}
+        {canScrollRight && <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-[5]" />}
+        {/* Scrollable content */}
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex gap-3 overflow-x-auto px-1 py-1 scrollbar-hide snap-x"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {children}
         </div>
-      </div>
-      <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-        {children}
       </div>
     </div>
   );
