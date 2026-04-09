@@ -412,7 +412,7 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
           </p>
           <NavLink
             href="/app/smart-graph"
-            label="Smart Graph"
+            label="Dynamic Tree"
             icon={<Network className="h-4 w-4" />}
             active={pathname === "/app/smart-graph"}
           />
