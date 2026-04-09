@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/providers";
 import { UserAvatar } from "@/components/user-avatar";
 import { BrandIcon } from "@/components/brand-icon";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -89,7 +90,13 @@ function Carousel({ children, label, icon }: { children: React.ReactNode; label:
   );
 }
 
-export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: Employee[]; brands?: Brand[]; isAdmin?: boolean }) {
+type BrandStats = {
+  totalGp: number;
+  totalUnits: number;
+  sellers: { id: string; name: string }[];
+};
+
+export function AdminEmployees({ rows, brands = [], brandStats = {}, isAdmin = false }: { rows: Employee[]; brands?: Brand[]; brandStats?: Record<string, BrandStats>; isAdmin?: boolean }) {
   const router = useRouter();
   const { success, error } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -357,20 +364,63 @@ export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: E
       {selectedBrand && (() => {
         const brand = brands.find((b) => b.id === selectedBrand);
         if (!brand) return null;
+        const stats = brandStats[brand.id];
         return (
-          <div className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
-            <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm">
-              <BrandIcon name={brand.name} size={40} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-zinc-800">{brand.name}</p>
-              <span className={`text-xs font-medium ${brand.is_active ? "text-green-600" : "text-red-500"}`}>
-                {brand.is_active ? "Active" : "Inactive"}
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-start gap-4">
+              <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm shrink-0">
+                <BrandIcon name={brand.name} size={40} />
               </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-zinc-800">{brand.name}</p>
+                <span className={`text-xs font-medium ${brand.is_active ? "text-green-600" : "text-red-500"}`}>
+                  {brand.is_active ? "Active" : "Inactive"}
+                </span>
+                {stats ? (
+                  <div className="mt-2 space-y-3">
+                    {/* Stats row */}
+                    <div className="flex flex-wrap gap-3">
+                      <div className="rounded-lg border border-amber-200 bg-white px-3 py-1.5">
+                        <p className="text-[10px] uppercase tracking-wider text-zinc-400">Total GP</p>
+                        <p className="text-sm font-bold text-zinc-800">{formatCurrency(stats.totalGp)}</p>
+                      </div>
+                      <div className="rounded-lg border border-amber-200 bg-white px-3 py-1.5">
+                        <p className="text-[10px] uppercase tracking-wider text-zinc-400">Units Sold</p>
+                        <p className="text-sm font-bold text-zinc-800">{stats.totalUnits}</p>
+                      </div>
+                      <div className="rounded-lg border border-amber-200 bg-white px-3 py-1.5">
+                        <p className="text-[10px] uppercase tracking-wider text-zinc-400">Sellers</p>
+                        <p className="text-sm font-bold text-zinc-800">{stats.sellers.length}</p>
+                      </div>
+                    </div>
+                    {/* Sellers list */}
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-zinc-400 mb-1.5">Sold by</p>
+                      <div className="flex flex-wrap gap-2">
+                        {stats.sellers.map((seller) => {
+                          const emp = rows.find((r) => r.id === seller.id);
+                          return (
+                            <button
+                              key={seller.id}
+                              onClick={() => { setSelectedEmployee(seller.id); setSelectedBrand(null); }}
+                              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-medium text-zinc-700 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                            >
+                              <UserAvatar name={seller.name} avatarUrl={emp?.avatar_url ?? null} size={20} />
+                              {seller.name.split(" ")[0]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-zinc-400 italic">No sales recorded this year</p>
+                )}
+              </div>
+              <button onClick={() => setSelectedBrand(null)} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button onClick={() => setSelectedBrand(null)} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
           </div>
         );
       })()}
