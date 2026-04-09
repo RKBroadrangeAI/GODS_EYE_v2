@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, Code2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Bot, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,26 +123,7 @@ function renderMarkdown(md: string) {
   return elements;
 }
 
-/* ── SQL toggle component ────────────────────────────────────────── */
-function SqlToggle({ sql }: { sql: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-1">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-600 transition-colors"
-      >
-        <Code2 className="h-3 w-3" />
-        {open ? "Hide SQL" : "Show SQL"}
-        {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-      </button>
-      {open && (
-        <pre className="mt-1 rounded bg-zinc-900 p-2 text-[10px] text-green-400 overflow-x-auto leading-relaxed">
-          {sql}
-        </pre>
-      )}
-    </div>
+/* SqlToggle removed */
   );
 }
 
@@ -213,7 +194,7 @@ export function AIAssistant() {
           Ask Larry
           <span className="ml-auto flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
             <Sparkles className="h-3 w-3" />
-            Text-to-SQL + AI
+            Advanced AI
           </span>
         </CardTitle>
       </CardHeader>
@@ -268,7 +249,6 @@ export function AIAssistant() {
                 <div className="leading-relaxed text-zinc-700 space-y-0.5">
                   {message.role === "assistant" ? renderMarkdown(message.content) : message.content}
                 </div>
-                {message.sql && <SqlToggle sql={message.sql} />}
               </div>
             ))
           )}
