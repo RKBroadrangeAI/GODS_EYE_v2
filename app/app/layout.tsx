@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { RealtimeRefresher } from "@/components/realtime-refresher";
 import { requireAuth } from "@/lib/auth";
 import { pool } from "@/lib/db";
+import { LogoutButton } from "@/components/logout-button";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default async function AppLayout({
     <div className="min-h-screen lg:flex">
       <RealtimeRefresher />
       {showSidebar && <AppSidebar role={auth.role} name={auth.name} avatarUrl={avatarUrl} />}
+      {!showSidebar && <LogoutButton />}
       <main className="flex-1 bg-zinc-50 p-4 lg:p-8">
         {children}
       </main>
