@@ -24,7 +24,7 @@ const updateSchema = z.object({
 
 export async function POST(request: Request) {
   const auth = await getRequestAuth();
-  if (!auth || auth.role !== "admin") {
+  if (!auth || (auth.role !== "admin" && auth.role !== "management")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const auth = await getRequestAuth();
-  if (!auth || auth.role !== "admin") {
+  if (!auth || (auth.role !== "admin" && auth.role !== "management")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -123,7 +123,7 @@ const deleteSchema = z.object({
 
 export async function DELETE(request: Request) {
   const auth = await getRequestAuth();
-  if (!auth || auth.role !== "admin") {
+  if (!auth || (auth.role !== "admin" && auth.role !== "management")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

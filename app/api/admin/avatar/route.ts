@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   const file = formData.get("avatar") as File | null;
   const employeeId = formData.get("employeeId") as string | null;
 
-  // Admin can set any employee's avatar; non-admins can only set their own
-  const targetId = auth.role === "admin" && employeeId ? employeeId : auth.employeeId;
+  // Admin/management can set any employee's avatar; others can only set their own
+  const targetId = (auth.role === "admin" || auth.role === "management") && employeeId ? employeeId : auth.employeeId;
 
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });

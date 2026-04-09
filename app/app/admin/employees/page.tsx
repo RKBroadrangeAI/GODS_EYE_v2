@@ -31,7 +31,7 @@ export default async function AdminEmployeesPage() {
           <CardTitle>Employee Roster</CardTitle>
         </CardHeader>
         <CardContent>
-          <AdminEmployees rows={rows} brands={brands} isAdmin={auth.role === "admin"} />
+          <AdminEmployees rows={rows} brands={brands} isAdmin={auth.role === "admin" || auth.role === "management"} />
         </CardContent>
       </Card>
     </section>
