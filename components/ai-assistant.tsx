@@ -123,10 +123,6 @@ function renderMarkdown(md: string) {
   return elements;
 }
 
-/* SqlToggle removed */
-  );
-}
-
 export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [query, setQuery] = useState("");
