@@ -605,25 +605,34 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
     return () => ro.disconnect();
   }, [computeLines]);
 
+  /* ── Tap to add dimension (mobile alternative to drag) ── */
+  const addDimension = (key: DimensionKey) => {
+    if (pipeline.includes(key)) return;
+    const next = [...pipeline, key];
+    setPipeline(next);
+    loadRoot(next);
+  };
+
   /* ── Render ─────────────────────────────────── */
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col h-full gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Network className="h-6 w-6 text-indigo-600" />
+          <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
+            <Network className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
             Smart Graph
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Drag dimensions into the pipeline to build your drill-down tree
+          <p className="mt-0.5 text-xs sm:text-sm text-zinc-500">
+            <span className="hidden sm:inline">Drag dimensions into the pipeline to build your drill-down tree</span>
+            <span className="sm:hidden">Tap dimensions to build your drill-down</span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={year}
             onChange={(e) => handleYearChange(Number(e.target.value))}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm bg-white"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm bg-white"
           >
             {[2024, 2025, 2026].map((y) => (
               <option key={y} value={y}>
@@ -634,7 +643,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
           {pipeline.length > 0 && (
             <button
               onClick={clearAll}
-              className="flex items-center gap-1 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
+              className="flex items-center gap-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               Reset
@@ -645,7 +654,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             <div className="relative" ref={colPickerRef}>
               <button
                 onClick={() => setShowColPicker(!showColPicker)}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   showColPicker
                     ? "border-indigo-400 bg-indigo-50 text-indigo-700"
                     : "border-zinc-300 text-zinc-600 hover:bg-zinc-100"
@@ -697,7 +706,7 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
             <div className="relative" ref={sortPickerRef}>
               <button
                 onClick={() => setShowSortPicker(!showSortPicker)}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   showSortPicker
                     ? "border-indigo-400 bg-indigo-50 text-indigo-700"
                     : sortConfig
@@ -776,18 +785,19 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
       </div>
 
       {/* ── Top bar: Available dimensions + Pipeline drop zone ── */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 rounded-xl border border-zinc-200 bg-white px-3 sm:px-4 py-3 shadow-sm">
         {/* Available dimension chips */}
         {available.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {available.map((dim) => (
               <div
                 key={dim.key}
                 draggable
                 onDragStart={(e) => onDragStart(e, dim.key)}
-                className={`flex cursor-grab items-center gap-1.5 rounded-lg border ${dim.borderColor} ${dim.bgColor} px-3 py-1.5 text-xs font-semibold ${dim.color} transition-all hover:shadow-md active:cursor-grabbing active:shadow-lg`}
+                onClick={() => addDimension(dim.key)}
+                className={`flex cursor-pointer sm:cursor-grab items-center gap-1.5 rounded-lg border ${dim.borderColor} ${dim.bgColor} px-3 py-2 sm:py-1.5 text-xs font-semibold ${dim.color} transition-all hover:shadow-md active:scale-95 active:shadow-lg select-none`}
               >
-                <GripVertical className="h-3 w-3 opacity-40" />
+                <GripVertical className="h-3 w-3 opacity-40 hidden sm:block" />
                 {dim.icon}
                 <span>{dim.label}</span>
               </div>
@@ -796,62 +806,65 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         )}
 
         {/* Separator */}
-        {available.length > 0 && (
-          <div className="h-6 w-px bg-zinc-300 mx-1" />
+        {available.length > 0 && pipeline.length > 0 && (
+          <div className="hidden sm:block h-6 w-px bg-zinc-300 mx-1" />
         )}
 
         {/* Pipeline drop zone */}
-        <div
-          ref={dropRef}
-          onDragOver={onDragOverDrop}
-          onDragLeave={onDragLeaveDrop}
-          onDrop={onDrop}
-          className={`flex flex-1 min-h-[36px] items-center gap-2 rounded-lg border-2 border-dashed px-3 py-1 transition-colors ${
-            dragOver
-              ? "border-indigo-400 bg-indigo-50"
-              : pipeline.length > 0
-                ? "border-zinc-200 bg-zinc-50/50"
-                : "border-zinc-300 bg-zinc-50"
-          }`}
-        >
-          {pipeline.length === 0 && (
-            <span className="text-xs text-zinc-400 italic">
-              Drop here to build hierarchy &hellip;
-            </span>
-          )}
-          {pipeline.map((key, idx) => {
-            const dim = dimMap.get(key)!;
-            return (
-              <div
-                key={key}
-                draggable
-                onDragStart={(e) => onPipeDragStart(e, idx)}
-                onDragOver={(e) => onPipeDragOver(e, idx)}
-                onDrop={(e) => onPipeDrop(e, idx)}
-                className={`flex items-center gap-1.5 rounded-lg border ${dim.borderColor} ${dim.bgColor} px-2.5 py-1 text-xs font-semibold ${dim.color} cursor-grab transition-all ${
-                  dragOverIdx === idx ? "ring-2 ring-indigo-400 ring-offset-1" : ""
-                }`}
-              >
-                <GripVertical className="h-3 w-3 opacity-40" />
-                {dim.icon}
-                <span>{dim.label}</span>
-                <button
-                  onClick={() => removeDim(idx)}
-                  className="ml-1 rounded p-0.5 hover:bg-black/10 transition-colors"
+        {(pipeline.length > 0 || available.length === 0) && (
+          <div
+            ref={dropRef}
+            onDragOver={onDragOverDrop}
+            onDragLeave={onDragLeaveDrop}
+            onDrop={onDrop}
+            className={`flex flex-wrap sm:flex-1 min-h-[36px] items-center gap-2 rounded-lg border-2 border-dashed px-3 py-1.5 transition-colors ${
+              dragOver
+                ? "border-indigo-400 bg-indigo-50"
+                : pipeline.length > 0
+                  ? "border-zinc-200 bg-zinc-50/50"
+                  : "border-zinc-300 bg-zinc-50"
+            }`}
+          >
+            {pipeline.length === 0 && (
+              <span className="text-xs text-zinc-400 italic">
+                <span className="hidden sm:inline">Drop here to build hierarchy &hellip;</span>
+                <span className="sm:hidden">Tap dimensions above &hellip;</span>
+              </span>
+            )}
+            {pipeline.map((key, idx) => {
+              const dim = dimMap.get(key)!;
+              return (
+                <div
+                  key={key}
+                  draggable
+                  onDragStart={(e) => onPipeDragStart(e, idx)}
+                  onDragOver={(e) => onPipeDragOver(e, idx)}
+                  onDrop={(e) => onPipeDrop(e, idx)}
+                  className={`flex items-center gap-1.5 rounded-lg border ${dim.borderColor} ${dim.bgColor} px-2.5 py-1.5 text-xs font-semibold ${dim.color} cursor-grab transition-all ${
+                    dragOverIdx === idx ? "ring-2 ring-indigo-400 ring-offset-1" : ""
+                  }`}
                 >
-                  <X className="h-3 w-3" />
-                </button>
-                {idx < pipeline.length - 1 && (
-                  <span className="ml-1 text-zinc-300">&rarr;</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  <GripVertical className="h-3 w-3 opacity-40 hidden sm:block" />
+                  {dim.icon}
+                  <span>{dim.label}</span>
+                  <button
+                    onClick={() => removeDim(idx)}
+                    className="ml-1 rounded p-1 hover:bg-black/10 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  {idx < pipeline.length - 1 && (
+                    <span className="ml-1 text-zinc-300">&rarr;</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Graph Canvas (full width) ────────── */}
-      <div className="flex-1 overflow-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-sm relative" ref={treeRef}>
+      <div className="flex-1 overflow-auto rounded-xl border border-zinc-200 bg-white p-3 sm:p-6 shadow-sm relative" ref={treeRef}>
         {/* SVG connector lines */}
         {lines.length > 0 && (
           <svg
@@ -893,9 +906,9 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
         ) : (
           <div className="relative">
             {/* Root label — WYW (Atlanta) */}
-            <div className="mb-6 flex items-center gap-3 relative z-20 bg-white rounded-xl px-4 py-2 w-fit shadow-sm" data-parent-path="root">
+            <div className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 relative z-20 bg-white rounded-xl px-3 sm:px-4 py-2 w-fit shadow-sm" data-parent-path="root">
               <div
-                className="h-12 w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden shrink-0"
+                className="h-9 w-9 sm:h-12 sm:w-12 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center shadow-md overflow-hidden shrink-0"
                 data-node-path="root"
               >
                 <Image
@@ -908,16 +921,16 @@ export function SmartGraph({ year: initialYear }: { year: number }) {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold text-zinc-800">
+                <span className="text-sm sm:text-base font-bold text-zinc-800">
                   WYW (Atlanta)
                 </span>
-                <span className="text-sm font-medium text-zinc-600">
+                <span className="text-xs sm:text-sm font-medium text-zinc-600">
                   {year} · Smart Graph
                 </span>
               </div>
             </div>
             {/* Tree nodes */}
-            <div className="ml-8 pl-4">
+            <div className="ml-2 sm:ml-8 pl-2 sm:pl-4">
               {sortNodes(rootNodes, sortConfig).map((node, i) => (
                 <TreeNode
                   key={node.id}
@@ -968,7 +981,7 @@ function TreeNode({
     <div className="py-1.5" data-parent-path={node.expanded && node.children.length > 0 ? pathStr : undefined}>
       <button
         onClick={() => onToggle(path)}
-        className={`group relative z-20 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-all hover:bg-white/70 hover:shadow-sm ${
+        className={`group relative z-20 flex w-full items-center gap-2 sm:gap-3 rounded-xl px-2 sm:px-4 py-2.5 sm:py-3 text-left text-sm transition-all hover:bg-white/70 hover:shadow-sm ${
           node.expanded ? "bg-white/70 shadow-sm" : ""
         }`}
       >
@@ -997,7 +1010,7 @@ function TreeNode({
         {/* Name badge */}
         <span
           data-node-path={pathStr}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm ${
+          className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-lg border px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold shadow-sm ${
             dim?.borderColor ?? "border-zinc-300"
           } ${dim?.bgColor ?? "bg-zinc-50"} ${dim?.color ?? "text-zinc-700"}`}
         >
@@ -1006,22 +1019,22 @@ function TreeNode({
         </span>
 
         {/* Metrics */}
-        <span className="ml-auto flex items-center gap-4 text-xs text-zinc-500">
-          <span className="font-bold text-zinc-700 text-sm">
+        <span className="ml-auto flex items-center gap-2 sm:gap-4 text-[11px] sm:text-xs text-zinc-500">
+          <span className="font-bold text-zinc-700 text-xs sm:text-sm">
             {formatCurrency(node.gp)}
           </span>
           <span className="hidden sm:inline">
-            {node.units} units
+            {node.units}u
           </span>
           <span className="hidden md:inline text-zinc-400">
-            {formatPercent(node.margin)} margin
+            {formatPercent(node.margin)}
           </span>
         </span>
       </button>
 
       {/* Children */}
       {node.expanded && node.children.length > 0 && (
-        <div className="ml-12 mt-1 pl-4">
+        <div className="ml-4 sm:ml-12 mt-1 pl-2 sm:pl-4">
           {sortNodes(node.children, sortConfig).map((child, i) => (
             <TreeNode
               key={child.id}
@@ -1038,12 +1051,12 @@ function TreeNode({
       )}
 
       {node.expanded && node.children.length === 0 && !node.loading && (
-        <div className="ml-16 pl-4 py-2 relative z-20">
+        <div className="ml-2 sm:ml-16 pl-2 sm:pl-4 py-2 relative z-20">
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (() => {
             const sorted = sortDetails(node.saleDetails, sortConfig);
             return (
-            <div className="rounded-lg border border-zinc-200 overflow-x-auto bg-white/80 shadow-sm backdrop-blur-sm">
-              <table className="w-full text-xs min-w-[500px]">
+            <div className="rounded-lg border border-zinc-200 overflow-x-auto bg-white/80 shadow-sm backdrop-blur-sm -mx-1 sm:mx-0">
+              <table className="w-full text-[11px] sm:text-xs min-w-[400px] sm:min-w-[500px]">
                 <thead>
                   <tr className="bg-zinc-50 text-zinc-500 text-left">
                     {visibleCols.has("brand") && <th className="px-3 py-2 font-medium">Brand</th>}
