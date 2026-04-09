@@ -125,7 +125,15 @@ export default async function MenuPage() {
           alt="God's Eye"
           width={160}
           height={160}
-          className="object-contain"
+          className="hidden sm:block object-contain"
+          unoptimized
+        />
+        <Image
+          src="/God's Eye 2.png"
+          alt="God's Eye"
+          width={80}
+          height={80}
+          className="sm:hidden object-contain"
           unoptimized
         />
       </div>

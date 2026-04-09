@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -37,6 +37,8 @@ import {
   FileBarChart2,
   Sparkles,
   Hand,
+  Menu,
+  X,
 } from "lucide-react";
 import { adminLinks } from "@/lib/constants";
 import { getBrandImagePath } from "@/lib/brand-icons";
@@ -160,6 +162,12 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
   const [loadingEntity, setLoadingEntity] = useState<string | null>(null);
   const [expandedLink, setExpandedLink] = useState<string | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  /* Close mobile drawer on navigation */
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const toggle = (key: string) =>
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -194,18 +202,50 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
   }
 
   return (
-    <aside className="flex w-full shrink-0 flex-col bg-white border-r border-zinc-200 lg:w-64 lg:min-h-screen shadow-sm">
-      {/* Logo */}
-      <div className="flex flex-col items-center border-b border-zinc-100 px-4 py-5">
-        <Image
-          src="/God's Eye 2.png"
-          alt="God's Eye"
-          width={80}
-          height={80}
-          className="object-contain"
-          unoptimized
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5 text-zinc-700" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
         />
-      </div>
+      )}
+
+      <aside
+        className={
+          "fixed inset-y-0 left-0 z-50 flex w-72 shrink-0 flex-col bg-white border-r border-zinc-200 shadow-lg transition-transform duration-200 lg:static lg:z-auto lg:w-64 lg:translate-x-0 lg:shadow-sm lg:min-h-screen " +
+          (mobileOpen ? "translate-x-0" : "-translate-x-full")
+        }
+      >
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 lg:hidden"
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {/* Logo */}
+        <div className="flex flex-col items-center border-b border-zinc-100 px-4 py-5">
+          <Image
+            src="/God's Eye 2.png"
+            alt="God's Eye"
+            width={80}
+            height={80}
+            className="object-contain"
+            unoptimized
+          />
+        </div>
 
       {/* User */}
       <div className="flex items-center gap-3 border-b border-zinc-100 px-5 py-3">
@@ -440,6 +480,7 @@ export function AppSidebar({ role, name, avatarUrl }: SidebarProps) {
         </button>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -480,7 +521,7 @@ function CatLink({
       <div className="flex items-center">
         <Link
           href={link.href}
-          className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors ${
+          className={`flex flex-1 items-center gap-2 rounded-md px-2 py-2.5 lg:py-1.5 text-sm lg:text-xs transition-colors ${
             isActive && !activeEntityId
               ? cat.activeCls
               : isActive

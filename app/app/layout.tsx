@@ -26,7 +26,7 @@ export default async function AppLayout({
       <RealtimeRefresher />
       {showSidebar && <AppSidebar role={auth.role} name={auth.name} avatarUrl={avatarUrl} />}
       {!showSidebar && <LogoutButton />}
-      <main className="flex-1 bg-zinc-50 p-4 lg:p-8">
+      <main className={`flex-1 bg-zinc-50 p-4 lg:p-8 ${showSidebar ? "pt-16 lg:pt-8" : ""}`}>
         {children}
       </main>
     </div>

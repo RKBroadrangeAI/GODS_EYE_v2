@@ -1042,8 +1042,8 @@ function TreeNode({
           {!hasMoreDimensions && node.saleDetails && node.saleDetails.length > 0 ? (() => {
             const sorted = sortDetails(node.saleDetails, sortConfig);
             return (
-            <div className="rounded-lg border border-zinc-200 overflow-hidden bg-white/80 shadow-sm backdrop-blur-sm">
-              <table className="w-full text-xs">
+            <div className="rounded-lg border border-zinc-200 overflow-x-auto bg-white/80 shadow-sm backdrop-blur-sm">
+              <table className="w-full text-xs min-w-[500px]">
                 <thead>
                   <tr className="bg-zinc-50 text-zinc-500 text-left">
                     {visibleCols.has("brand") && <th className="px-3 py-2 font-medium">Brand</th>}

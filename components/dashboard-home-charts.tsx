@@ -150,10 +150,10 @@ function KpiBox({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-sm min-w-0">
-      <p className="text-[9px] uppercase tracking-wider text-zinc-400 whitespace-nowrap">{label}</p>
-      <p className={"text-base font-bold whitespace-nowrap " + (accent ?? "text-zinc-800")}>{value}</p>
+      <p className="text-[10px] sm:text-[9px] uppercase tracking-wider text-zinc-400 whitespace-nowrap">{label}</p>
+      <p className={"text-sm sm:text-base font-bold whitespace-nowrap " + (accent ?? "text-zinc-800")}>{value}</p>
       {prevValue != null && (
-        <p className="text-[9px] text-zinc-400 whitespace-nowrap">{prevValue}</p>
+        <p className="text-[10px] sm:text-[9px] text-zinc-400 whitespace-nowrap">{prevValue}</p>
       )}
     </div>
   );
@@ -287,9 +287,9 @@ export function DashboardHomeCharts({
   });
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden">
+    <div className="flex h-full flex-col gap-3 overflow-auto lg:overflow-hidden">
       {/* ── KPI Row ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-stretch gap-2 rounded-xl bg-zinc-100 px-3 py-2.5 shrink-0">
+      <div className="grid grid-cols-3 sm:grid-cols-5 lg:flex lg:flex-wrap items-stretch gap-2 rounded-xl bg-zinc-100 px-3 py-2.5 shrink-0">
         <KpiBox
           label="Revenue"
           value={compactNum(data.kpis.totalRevenue)}
@@ -367,7 +367,7 @@ export function DashboardHomeCharts({
       </div>
 
       {/* ── Section cards grid ──────────────────────────────── */}
-      <div className="grid flex-1 min-h-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 lg:flex-1 lg:min-h-0">
 
         {/* ── BUDGETING ─────────────────────────────────────── */}
         <SectionCard title="BUDGETING" color={SECTION.budgeting}>

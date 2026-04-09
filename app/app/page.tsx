@@ -149,7 +149,7 @@ export default async function AppHomePage() {
   const prevChartData = buildYearData(prevFacts, people, leadMap, brandMap, channelMap, prevBudgetByMonth, prevYear, currentMonth);
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] flex-col gap-2 overflow-hidden">
+    <div className="flex min-h-[calc(100vh-2rem)] lg:h-[calc(100vh-2rem)] flex-col gap-2 overflow-hidden">
       {/* Logo header */}
       <div className="flex flex-col items-center justify-center shrink-0">
         <Image
@@ -157,10 +157,10 @@ export default async function AppHomePage() {
           alt="God's Eye"
           width={100}
           height={100}
-          className="object-contain"
+          className="hidden lg:block object-contain"
           unoptimized
         />
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">Executive Dashboard — {year} vs {prevYear}</p>
+        <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-500">Executive Dashboard — {year} vs {prevYear}</p>
       </div>
 
       {/* Charts fill remaining space */}
