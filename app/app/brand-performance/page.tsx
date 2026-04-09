@@ -9,6 +9,8 @@ import { BrandIcon } from "@/components/brand-icon";
 import { parseComparisonParams } from "@/lib/comparison";
 import { ComparisonBanner } from "@/components/comparison-banner";
 import { DeltaIndicator } from "@/components/delta-indicator";
+import { BrandCarousel } from "@/components/brand-carousel";
+import { pool } from "@/lib/db";
 import Link from "next/link";
 
 export default async function BrandPerformancePage({
@@ -22,11 +24,46 @@ export default async function BrandPerformancePage({
   const filter = parseEntityFilter(params);
   const comp = parseComparisonParams(params);
 
-  const [data, people] = await Promise.all([
+  const [data, people, brandsResult, brandStatsResult] = await Promise.all([
     getBrandPerformanceData(year, filter),
     getPeopleMap(false),
+    pool.query<{ id: string; name: string; is_active: boolean }>(
+      `SELECT id, name, is_active FROM brands WHERE is_active = true ORDER BY name`
+    ),
+    pool.query<{
+      brand_id: string;
+      total_gp: string;
+      total_units: string;
+      seller_ids: string[];
+      seller_names: string[];
+      seller_avatars: (string | null)[];
+    }>(`
+      SELECT
+        s.brand_id,
+        COALESCE(SUM(s.profit), 0)::text AS total_gp,
+        COUNT(*)::text AS total_units,
+        ARRAY_AGG(DISTINCT e.id) AS seller_ids,
+        ARRAY_AGG(DISTINCT e.name) AS seller_names,
+        ARRAY_AGG(DISTINCT e.avatar_url) AS seller_avatars
+      FROM sales s
+      JOIN employees e ON e.id = s.sales_person_id
+      WHERE EXTRACT(YEAR FROM s.date_out) = $1
+        AND s.brand_id IS NOT NULL
+      GROUP BY s.brand_id
+    `, [year]),
   ]);
+
+  const brands = brandsResult.rows;
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
+
+  const brandStats: Record<string, { totalGp: number; totalUnits: number; sellers: { id: string; name: string; avatarUrl: string | null }[] }> = {};
+  for (const bs of brandStatsResult.rows) {
+    brandStats[bs.brand_id] = {
+      totalGp: Number(bs.total_gp),
+      totalUnits: Number(bs.total_units),
+      sellers: bs.seller_ids.map((id, i) => ({ id, name: bs.seller_names[i], avatarUrl: bs.seller_avatars[i] ?? null })),
+    };
+  }
 
   let prevMap = new Map<string, (typeof data.rows)[0]>();
   if (comp.isComparing) {
@@ -54,6 +91,10 @@ export default async function BrandPerformancePage({
       </div>
 
       <ComparisonBanner year={year} compareYear={comp.compareYear} isMonthly={false} />
+
+      {/* Brand Carousel */}
+      <BrandCarousel brands={brands} brandStats={brandStats} year={year} />
+
       <Card>
         <CardHeader>
           <CardTitle>Year {year}</CardTitle>
