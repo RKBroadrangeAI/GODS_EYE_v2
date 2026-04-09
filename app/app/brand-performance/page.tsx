@@ -24,7 +24,7 @@ export default async function BrandPerformancePage({
   const filter = parseEntityFilter(params);
   const comp = parseComparisonParams(params);
 
-  const [data, people, brandsResult, brandStatsResult] = await Promise.all([
+  const [data, people, brandsResult, brandStatsResult, brandSellersResult] = await Promise.all([
     getBrandPerformanceData(year, filter),
     getPeopleMap(false),
     pool.query<{ id: string; name: string; is_active: boolean }>(
@@ -35,42 +35,34 @@ export default async function BrandPerformancePage({
       sale_year: string;
       total_gp: string;
       total_units: string;
-      seller_ids: string[];
-      seller_names: string[];
-      seller_avatars: (string | null)[];
     }>(`
       SELECT
-        ds.brand_id,
-        ds.sale_year,
-        ds.total_gp,
-        ds.total_units,
-        COALESCE(sellers.ids, '{}') AS seller_ids,
-        COALESCE(sellers.names, '{}') AS seller_names,
-        COALESCE(sellers.avatars, '{}') AS seller_avatars
-      FROM (
-        SELECT
-          s.brand_id,
-          EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
-          COALESCE(SUM(s.profit), 0)::text AS total_gp,
-          COUNT(*)::text AS total_units
-        FROM sales s
-        WHERE s.brand_id IS NOT NULL AND s.date_out IS NOT NULL
-        GROUP BY s.brand_id, EXTRACT(YEAR FROM s.date_out)
-      ) ds
-      LEFT JOIN LATERAL (
-        SELECT
-          array_agg(sub.id ORDER BY sub.id) AS ids,
-          array_agg(sub.name ORDER BY sub.id) AS names,
-          array_agg(sub.avatar_url ORDER BY sub.id) AS avatars
-        FROM (
-          SELECT DISTINCT e.id, e.name, e.avatar_url
-          FROM sales s2
-          JOIN employees e ON e.id = s2.sales_person_id
-          WHERE s2.brand_id = ds.brand_id
-            AND EXTRACT(YEAR FROM s2.date_out)::text = ds.sale_year
-        ) sub
-      ) sellers ON true
-      ORDER BY ds.brand_id, ds.sale_year DESC
+        s.brand_id,
+        EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
+        COALESCE(SUM(s.profit), 0)::text AS total_gp,
+        COUNT(*)::text AS total_units
+      FROM sales s
+      WHERE s.brand_id IS NOT NULL AND s.date_out IS NOT NULL
+      GROUP BY s.brand_id, EXTRACT(YEAR FROM s.date_out)
+      ORDER BY s.brand_id, sale_year DESC
+    `),
+    pool.query<{
+      brand_id: string;
+      sale_year: string;
+      seller_id: string;
+      seller_name: string;
+      seller_avatar: string | null;
+    }>(`
+      SELECT DISTINCT
+        s.brand_id,
+        EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
+        e.id AS seller_id,
+        e.name AS seller_name,
+        e.avatar_url AS seller_avatar
+      FROM sales s
+      JOIN employees e ON e.id = s.sales_person_id
+      WHERE s.brand_id IS NOT NULL AND s.date_out IS NOT NULL
+      ORDER BY s.brand_id, sale_year DESC, e.name
     `),
   ]);
 
@@ -84,8 +76,17 @@ export default async function BrandPerformancePage({
       year: Number(bs.sale_year),
       totalGp: Number(bs.total_gp),
       totalUnits: Number(bs.total_units),
-      sellers: bs.seller_ids.map((id, i) => ({ id, name: bs.seller_names[i], avatarUrl: bs.seller_avatars[i] ?? null })),
+      sellers: [],
     });
+  }
+  // Attach sellers
+  for (const sr of brandSellersResult.rows) {
+    const entries = brandStats[sr.brand_id];
+    if (!entries) continue;
+    const entry = entries.find((e) => e.year === Number(sr.sale_year));
+    if (entry && !entry.sellers.some((s) => s.id === sr.seller_id)) {
+      entry.sellers.push({ id: sr.seller_id, name: sr.seller_name, avatarUrl: sr.seller_avatar ?? null });
+    }
   }
 
   let prevMap = new Map<string, (typeof data.rows)[0]>();
