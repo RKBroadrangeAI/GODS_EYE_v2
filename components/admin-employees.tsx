@@ -183,7 +183,7 @@ export function AdminEmployees({ rows, isAdmin = false }: { rows: Employee[]; is
           if (!emp) return null;
           return (
             <div
-              className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-3 w-[90px] transition-all ${
+              className={`flex flex-col items-center justify-center gap-2 rounded-xl border px-4 py-3 w-[100px] h-[120px] transition-all ${
                 selectedEmployee === emp.id
                   ? "border-indigo-400 bg-indigo-50 shadow-lg ring-2 ring-indigo-200"
                   : isFront

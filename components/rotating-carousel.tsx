@@ -45,8 +45,8 @@ export function RotatingCarousel({
       if (!running) return;
       const dt = now - lastTime.current;
       lastTime.current = now;
-      // speed: degrees per ms (roughly 12 deg/s)
-      setRotation((r) => r + dt * 0.012);
+      // speed: degrees per ms (roughly 12 deg/s), negative = clockwise
+      setRotation((r) => r - dt * 0.012);
       animRef.current = requestAnimationFrame(animate);
     };
     animRef.current = requestAnimationFrame(animate);
