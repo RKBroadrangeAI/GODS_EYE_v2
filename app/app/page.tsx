@@ -157,7 +157,7 @@ export default async function AppHomePage() {
           alt="God's Eye"
           width={100}
           height={100}
-          className="hidden lg:block object-contain"
+          className="object-contain w-12 h-12 sm:w-16 sm:h-16 lg:w-[100px] lg:h-[100px]"
           unoptimized
         />
         <p className="text-[10px] sm:text-xs uppercase tracking-widest text-zinc-500">Executive Dashboard — {year} vs {prevYear}</p>
