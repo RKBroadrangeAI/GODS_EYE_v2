@@ -32,6 +32,7 @@ export default async function BrandPerformancePage({
     ),
     pool.query<{
       brand_id: string;
+      sale_year: string;
       total_gp: string;
       total_units: string;
       seller_ids: string[];
@@ -40,6 +41,7 @@ export default async function BrandPerformancePage({
     }>(`
       SELECT
         s.brand_id,
+        EXTRACT(YEAR FROM s.date_out)::text AS sale_year,
         COALESCE(SUM(s.profit), 0)::text AS total_gp,
         COUNT(*)::text AS total_units,
         ARRAY_AGG(DISTINCT e.id) AS seller_ids,
@@ -47,22 +49,24 @@ export default async function BrandPerformancePage({
         ARRAY_AGG(DISTINCT e.avatar_url) AS seller_avatars
       FROM sales s
       JOIN employees e ON e.id = s.sales_person_id
-      WHERE EXTRACT(YEAR FROM s.date_out) = $1
-        AND s.brand_id IS NOT NULL
-      GROUP BY s.brand_id
-    `, [year]),
+      WHERE s.brand_id IS NOT NULL
+      GROUP BY s.brand_id, EXTRACT(YEAR FROM s.date_out)
+      ORDER BY s.brand_id, sale_year DESC
+    `),
   ]);
 
   const brands = brandsResult.rows;
   const personOptions = people.map((p) => ({ id: p.id, name: p.name }));
 
-  const brandStats: Record<string, { totalGp: number; totalUnits: number; sellers: { id: string; name: string; avatarUrl: string | null }[] }> = {};
+  const brandStats: Record<string, { year: number; totalGp: number; totalUnits: number; sellers: { id: string; name: string; avatarUrl: string | null }[] }[]> = {};
   for (const bs of brandStatsResult.rows) {
-    brandStats[bs.brand_id] = {
+    if (!brandStats[bs.brand_id]) brandStats[bs.brand_id] = [];
+    brandStats[bs.brand_id].push({
+      year: Number(bs.sale_year),
       totalGp: Number(bs.total_gp),
       totalUnits: Number(bs.total_units),
       sellers: bs.seller_ids.map((id, i) => ({ id, name: bs.seller_names[i], avatarUrl: bs.seller_avatars[i] ?? null })),
-    };
+    });
   }
 
   let prevMap = new Map<string, (typeof data.rows)[0]>();
