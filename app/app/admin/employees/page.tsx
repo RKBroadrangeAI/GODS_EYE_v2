@@ -1,34 +1,7 @@
 import { requireRoles } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import nextDynamic from "next/dynamic";
-
-const AdminEmployees = nextDynamic(() => import("@/components/admin-employees").then((m) => m.AdminEmployees), {
-  ssr: false,
-  loading: () => (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="h-5 w-28 animate-pulse rounded bg-zinc-200" />
-        <div className="flex gap-3 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 min-w-[90px]">
-              <div className="h-12 w-12 animate-pulse rounded-full bg-zinc-200" />
-              <div className="h-3 w-14 animate-pulse rounded bg-zinc-200" />
-              <div className="h-4 w-16 animate-pulse rounded-full bg-zinc-100" />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2">
-        <div className="h-10 animate-pulse rounded bg-zinc-100" />
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 animate-pulse rounded bg-zinc-50 border border-zinc-100" />
-        ))}
-      </div>
-    </div>
-  ),
-});
-
+import { AdminEmployees } from "@/components/admin-employees";
 
 
 export default async function AdminEmployeesPage() {
