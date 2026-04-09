@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
 import { UserAvatar } from "@/components/user-avatar";
 import { formatCurrency } from "@/lib/format";
-import { ChevronLeft, ChevronRight, ShoppingBag, X, CalendarDays } from "lucide-react";
+import { ShoppingBag, X, CalendarDays } from "lucide-react";
+import { RotatingCarousel } from "@/components/rotating-carousel";
 
 type Brand = {
   id: string;
@@ -28,86 +29,46 @@ export function BrandCarousel({
   brandStats: Record<string, BrandYearStats[]>;
   year: number;
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-
-  const checkScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  };
-
-  const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const pageWidth = el.clientWidth * 0.8;
-    el.scrollBy({ left: dir === "left" ? -pageWidth : pageWidth, behavior: "smooth" });
-  };
 
   if (brands.length === 0) return null;
 
+  const brandMap = Object.fromEntries(brands.map((b) => [b.id, b]));
+
   return (
     <div className="space-y-3">
-      {/* Carousel */}
-      <div className="space-y-2">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-700">
-          <ShoppingBag className="h-4 w-4 text-amber-500" />
-          Brands ({brands.length})
-        </h3>
-        <div className="relative group">
-          {canScrollLeft && (
-            <button
-              onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-zinc-200 shadow-lg text-zinc-500 hover:text-zinc-800 hover:shadow-xl transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 -ml-3"
+      <RotatingCarousel
+        items={brands}
+        selectedId={selectedBrand}
+        onSelect={setSelectedBrand}
+        label={`Brands (${brands.length})`}
+        icon={<ShoppingBag className="h-4 w-4 text-amber-500" />}
+        renderItem={(item, { isFront }) => {
+          const brand = brandMap[item.id];
+          if (!brand) return null;
+          const yearStats = brandStats[brand.id];
+          const currentYearStats = yearStats?.find((s) => s.year === year);
+          return (
+            <div
+              className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-3 w-[100px] transition-all ${
+                selectedBrand === brand.id
+                  ? "border-amber-400 bg-amber-50 shadow-lg ring-2 ring-amber-200"
+                  : isFront
+                    ? "border-zinc-300 bg-white shadow-md"
+                    : "border-zinc-200 bg-white"
+              }`}
             >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-          )}
-          {canScrollRight && (
-            <button
-              onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-zinc-200 shadow-lg text-zinc-500 hover:text-zinc-800 hover:shadow-xl transition-all opacity-0 group-hover:opacity-100 sm:opacity-100 -mr-3"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          )}
-          {canScrollLeft && <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-[5]" />}
-          {canScrollRight && <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-[5]" />}
-          <div
-            ref={scrollRef}
-            onScroll={checkScroll}
-            className="flex gap-3 overflow-x-auto px-1 py-1 scrollbar-hide snap-x"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {brands.map((brand) => {
-              const yearStats = brandStats[brand.id];
-              const currentYearStats = yearStats?.find((s) => s.year === year);
-              return (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-3 min-w-[100px] snap-start transition-all ${
-                    selectedBrand === brand.id
-                      ? "border-amber-400 bg-amber-50 shadow-md ring-2 ring-amber-200"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
-                  }`}
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-50 border border-zinc-100">
-                    <BrandIcon name={brand.name} size={32} />
-                  </span>
-                  <span className="text-xs font-medium text-zinc-700 whitespace-nowrap max-w-[88px] truncate">{brand.name}</span>
-                  {currentYearStats && (
-                    <span className="text-[10px] font-semibold text-emerald-600">{formatCurrency(currentYearStats.totalGp)}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-50 border border-zinc-100">
+                <BrandIcon name={brand.name} size={32} />
+              </span>
+              <span className="text-xs font-medium text-zinc-700 whitespace-nowrap max-w-[88px] truncate">{brand.name}</span>
+              {currentYearStats && (
+                <span className="text-[10px] font-semibold text-emerald-600">{formatCurrency(currentYearStats.totalGp)}</span>
+              )}
+            </div>
+          );
+        }}
+      />
 
       {/* Selected Brand Detail */}
       {selectedBrand && (() => {
