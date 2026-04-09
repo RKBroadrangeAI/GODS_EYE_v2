@@ -15,7 +15,11 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   id: z.string().uuid(),
-  isActive: z.boolean(),
+  isActive: z.boolean().optional(),
+  name: z.string().min(2).optional(),
+  email: z.string().email().nullable().optional(),
+  initials: z.string().min(1).max(4).optional(),
+  role: z.enum(["admin", "management", "sales_associate", "view_only"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -68,13 +72,41 @@ export async function PATCH(request: Request) {
   }
 
   try {
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    let idx = 1;
+
+    if (parsed.data.isActive !== undefined) {
+      sets.push(`is_active = $${idx++}`);
+      vals.push(parsed.data.isActive);
+      sets.push(`deactivated_at = $${idx++}`);
+      vals.push(parsed.data.isActive ? null : new Date().toISOString());
+    }
+    if (parsed.data.name !== undefined) {
+      sets.push(`name = $${idx++}`);
+      vals.push(parsed.data.name.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" "));
+    }
+    if (parsed.data.email !== undefined) {
+      sets.push(`email = $${idx++}`);
+      vals.push(parsed.data.email?.toLowerCase() ?? null);
+    }
+    if (parsed.data.initials !== undefined) {
+      sets.push(`initials = $${idx++}`);
+      vals.push(parsed.data.initials.toUpperCase());
+    }
+    if (parsed.data.role !== undefined) {
+      sets.push(`role = $${idx++}`);
+      vals.push(parsed.data.role);
+    }
+
+    if (sets.length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    }
+
+    vals.push(parsed.data.id);
     await pool.query(
-      `UPDATE employees SET is_active = $1, deactivated_at = $2 WHERE id = $3`,
-      [
-        parsed.data.isActive,
-        parsed.data.isActive ? null : new Date().toISOString(),
-        parsed.data.id,
-      ],
+      `UPDATE employees SET ${sets.join(", ")} WHERE id = $${idx}`,
+      vals,
     );
 
     revalidatePath("/app/admin/employees");

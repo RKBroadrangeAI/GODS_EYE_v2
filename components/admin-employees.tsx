@@ -8,7 +8,7 @@ import { BrandIcon } from "@/components/brand-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KeyRound, Trash2, X, ChevronLeft, ChevronRight, Users, ShoppingBag } from "lucide-react";
+import { KeyRound, Trash2, X, ChevronLeft, ChevronRight, Users, ShoppingBag, Pencil, Check } from "lucide-react";
 
 type Employee = {
   id: string;
@@ -96,6 +96,37 @@ export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: E
   const [passwordFor, setPasswordFor] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; email: string; initials: string; role: string }>({ name: "", email: "", initials: "", role: "" });
+
+  function startEditing(emp: Employee) {
+    setEditingEmployee(emp.id);
+    setSelectedEmployee(emp.id);
+    setEditForm({ name: emp.name, email: emp.email ?? "", initials: emp.initials ?? "", role: emp.role });
+  }
+
+  async function saveEmployee() {
+    if (!editingEmployee) return;
+    const response = await fetch("/api/admin/employees", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingEmployee,
+        name: editForm.name,
+        email: editForm.email || null,
+        initials: editForm.initials,
+        role: editForm.role,
+      }),
+    });
+    if (!response.ok) {
+      error("Failed to update employee");
+      return;
+    }
+    success("Employee updated");
+    setEditingEmployee(null);
+    startTransition(() => router.refresh());
+  }
 
   async function addEmployee(formData: FormData) {
     const password = String(formData.get("password") ?? "");
@@ -227,22 +258,75 @@ export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: E
       {selectedEmployee && (() => {
         const emp = rows.find((r) => r.id === selectedEmployee);
         if (!emp) return null;
+        const isEditing = editingEmployee === emp.id;
         return (
-          <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
-            <UserAvatar name={emp.name} avatarUrl={emp.avatar_url} size={56} />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-zinc-800">{emp.name}</p>
-              <p className="text-sm text-zinc-500">{emp.email ?? "No email"}</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <span className="text-xs text-zinc-400">Role: <span className="font-medium text-zinc-600">{emp.role.replace("_", " ")}</span></span>
-                <span className="text-xs text-zinc-400">Initials: <span className="font-medium text-zinc-600">{emp.initials ?? "—"}</span></span>
-                <span className="text-xs text-zinc-400">Login: <span className={`font-medium ${emp.has_password ? "text-green-600" : "text-zinc-500"}`}>{emp.has_password ? "Set" : "None"}</span></span>
-                <span className="text-xs text-zinc-400">Active: <span className={`font-medium ${emp.is_active ? "text-green-600" : "text-red-500"}`}>{emp.is_active ? "Yes" : "No"}</span></span>
-              </div>
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 py-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-start gap-4">
+              <UserAvatar name={emp.name} avatarUrl={emp.avatar_url} size={56} />
+              {isEditing ? (
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Name"
+                      className="h-9 text-sm"
+                    />
+                    <Input
+                      value={editForm.email}
+                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      placeholder="Email"
+                      type="email"
+                      className="h-9 text-sm"
+                    />
+                    <Input
+                      value={editForm.initials}
+                      onChange={(e) => setEditForm({ ...editForm, initials: e.target.value })}
+                      placeholder="Initials"
+                      maxLength={4}
+                      className="h-9 text-sm"
+                    />
+                    <select
+                      value={editForm.role}
+                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                      className="h-9 rounded-md border border-zinc-300 px-3 text-sm"
+                    >
+                      <option value="admin">admin</option>
+                      <option value="management">management</option>
+                      <option value="sales_associate">sales_associate</option>
+                      <option value="view_only">view_only</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button className="h-8 text-xs gap-1 px-3" onClick={saveEmployee} disabled={isPending}>
+                      <Check className="h-3.5 w-3.5" /> Save
+                    </Button>
+                    <Button variant="outline" className="h-8 text-xs px-3" onClick={() => setEditingEmployee(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-zinc-800">{emp.name}</p>
+                  <p className="text-sm text-zinc-500">{emp.email ?? "No email"}</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    <span className="text-xs text-zinc-400">Role: <span className="font-medium text-zinc-600">{emp.role.replace("_", " ")}</span></span>
+                    <span className="text-xs text-zinc-400">Initials: <span className="font-medium text-zinc-600">{emp.initials ?? "—"}</span></span>
+                    <span className="text-xs text-zinc-400">Login: <span className={`font-medium ${emp.has_password ? "text-green-600" : "text-zinc-500"}`}>{emp.has_password ? "Set" : "None"}</span></span>
+                    <span className="text-xs text-zinc-400">Active: <span className={`font-medium ${emp.is_active ? "text-green-600" : "text-red-500"}`}>{emp.is_active ? "Yes" : "No"}</span></span>
+                  </div>
+                  {isAdmin && (
+                    <Button variant="outline" className="h-7 text-xs gap-1 mt-2 px-2" onClick={() => startEditing(emp)}>
+                      <Pencil className="h-3 w-3" /> Edit Profile
+                    </Button>
+                  )}
+                </div>
+              )}
+              <button onClick={() => { setSelectedEmployee(null); setEditingEmployee(null); }} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button onClick={() => setSelectedEmployee(null)} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
           </div>
         );
       })()}
@@ -251,18 +335,45 @@ export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: E
       {brands.length > 0 && (
         <Carousel label={`Brands (${brands.length})`} icon={<ShoppingBag className="h-4 w-4 text-amber-500" />}>
           {brands.map((brand) => (
-            <div
+            <button
               key={brand.id}
-              className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 min-w-[90px] snap-start hover:border-zinc-300 hover:shadow-sm transition-all"
+              onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
+              className={`flex flex-col items-center gap-2 rounded-xl border px-4 py-3 min-w-[90px] snap-start transition-all ${
+                selectedBrand === brand.id
+                  ? "border-amber-400 bg-amber-50 shadow-md ring-2 ring-amber-200"
+                  : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+              }`}
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-50 border border-zinc-100">
                 <BrandIcon name={brand.name} size={32} />
               </span>
               <span className="text-xs font-medium text-zinc-700 whitespace-nowrap max-w-[80px] truncate">{brand.name}</span>
-            </div>
+            </button>
           ))}
         </Carousel>
       )}
+
+      {/* ── Selected Brand Detail ── */}
+      {selectedBrand && (() => {
+        const brand = brands.find((b) => b.id === selectedBrand);
+        if (!brand) return null;
+        return (
+          <div className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-white border border-zinc-200 shadow-sm">
+              <BrandIcon name={brand.name} size={40} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-zinc-800">{brand.name}</p>
+              <span className={`text-xs font-medium ${brand.is_active ? "text-green-600" : "text-red-500"}`}>
+                {brand.is_active ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <button onClick={() => setSelectedBrand(null)} className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-200 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })()}
 
       {isAdmin && (
         <form action={addEmployee} className="grid gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3 md:grid-cols-6">
@@ -327,6 +438,16 @@ export function AdminEmployees({ rows, brands = [], isAdmin = false }: { rows: E
               <TableCell>{row.is_active ? "Yes" : "No"}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      className="h-8 px-2"
+                      title="Edit employee"
+                      onClick={() => startEditing(row)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   {isAdmin && (
                     <Button variant="outline" className="h-8 text-xs px-2" onClick={() => toggleEmployee(row.id, !row.is_active)}>
                       {row.is_active ? "Deactivate" : "Activate"}
