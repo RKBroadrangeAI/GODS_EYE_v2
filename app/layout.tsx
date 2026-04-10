@@ -30,6 +30,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          defer
+          src="/stats/script.js"
+          data-website-id="1906fc62-71ba-4056-9030-e4a8ab2fa431"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
         <Providers>
           {children}

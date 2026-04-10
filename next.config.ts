@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
     "jimp",
     "sharp",
   ],
+  async rewrites() {
+    return [
+      { source: "/stats/script.js", destination: "https://cloud.umami.is/script.js" },
+      { source: "/stats/api/send", destination: "https://cloud.umami.is/api/send" },
+    ];
+  },
 };
 
 export default nextConfig;
